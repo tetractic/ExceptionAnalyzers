@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+
+    <Version>1.0.0</Version>
+
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+
+    <PackageId>Tetractic.CodeAnalysis.ExceptionAnalyzers</PackageId>
+    <Authors>Carl Reinke</Authors>
+    <Description>Helps you check that exceptions are caught or documented in C#.</Description>
+    <Copyright>2021 Carl Reinke</Copyright>
+    <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/Tetractic/ExceptionAnalyzers</PackageProjectUrl>
+    <PackageIcon>PackageIcon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/Tetractic/ExceptionAnalyzers</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>checked-exceptions;exceptions;analyzers</PackageTags>
+    <NeutralLanguage>en-US</NeutralLanguage>
+
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToOutput</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tetractic.CodeAnalysis.ExceptionAnalyzers.CodeFixes\Tetractic.CodeAnalysis.ExceptionAnalyzers.CodeFixes.csproj" />
+    <ProjectReference Include="..\Tetractic.CodeAnalysis.ExceptionAnalyzers.Analyzers\Tetractic.CodeAnalysis.ExceptionAnalyzers.Analyzers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="tools\*.ps1" CopyToOutputDirectory="Always" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.GPL-3.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\LICENSE.LGPL-3.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="PackageIcon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <Target Name="_AddAnalyzersToOutput">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(OutputPath)\Tetractic.CodeAnalysis.ExceptionAnalyzers.Analyzers.dll" PackagePath="analyzers/dotnet/cs" />
+      <TfmSpecificPackageFile Include="$(OutputPath)\Tetractic.CodeAnalysis.ExceptionAnalyzers.CodeFixes.dll" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+
+</Project>
