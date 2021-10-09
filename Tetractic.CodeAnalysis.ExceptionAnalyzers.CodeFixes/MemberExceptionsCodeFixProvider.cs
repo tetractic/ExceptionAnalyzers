@@ -13,7 +13,6 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Immutable;
 using System.Composition;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -37,12 +36,6 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             foreach (var diagnostic in context.Diagnostics)
             {
-                if (diagnostic.Descriptor.GetType().Assembly != typeof(MemberExceptionsAnalyzer).Assembly)
-                {
-                    Debug.Assert(false, "Diagnostic ID collision.");
-                    continue;
-                }
-
                 var diagnosticSpan = diagnostic.Location.SourceSpan;
                 var node = syntaxRoot.FindToken(diagnosticSpan.Start).Parent;
 
