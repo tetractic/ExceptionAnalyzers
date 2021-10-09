@@ -35,7 +35,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return _cache.GetValue(file, _ => Load(file.GetText(cancellationToken), file.Path));
         }
 
-        public static ExceptionAdjustmentsFile Load(SourceText text, string filePath = null)
+        public static ExceptionAdjustmentsFile Load(SourceText text, string? filePath = null)
         {
             var diagnosticsBuilder = ImmutableArray.CreateBuilder<Diagnostic>();
 
@@ -113,7 +113,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 var accessorSpan = new TextSpan(textLine.Span.Start + accessorStart, accessorEnd - accessorStart);
                 var accessorLineSpan = text.Lines.GetLinePositionSpan(accessorSpan);
-                string accessor = accessorSpan.IsEmpty ? null : line.Substring(accessorStart, accessorEnd - accessorStart);
+                string? accessor = accessorSpan.IsEmpty ? null : line.Substring(accessorStart, accessorEnd - accessorStart);
 
                 var exceptionTypeIdSpan = new TextSpan(textLine.Span.Start + exceptionTypeIdStart, exceptionTypeIdEnd - exceptionTypeIdStart);
                 var exceptionTypeIdLineSpan = text.Lines.GetLinePositionSpan(exceptionTypeIdSpan);

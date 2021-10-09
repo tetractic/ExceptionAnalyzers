@@ -22,9 +22,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
     {
         private static class DocumentationXmlFileCache
         {
-            private static readonly ConditionalWeakTable<MetadataReference, ImmutableDictionary<string, MemberInfo>> _cache = new ConditionalWeakTable<MetadataReference, ImmutableDictionary<string, MemberInfo>>();
+            private static readonly ConditionalWeakTable<MetadataReference, ImmutableDictionary<string, MemberInfo>?> _cache = new ConditionalWeakTable<MetadataReference, ImmutableDictionary<string, MemberInfo>?>();
 
-            public static ImmutableDictionary<string, MemberInfo> GetMemberInfos(PortableExecutableReference peReference)
+            public static ImmutableDictionary<string, MemberInfo>? GetMemberInfos(PortableExecutableReference peReference)
             {
                 string pePath = peReference.FilePath;
                 if (string.IsNullOrEmpty(pePath))
@@ -72,7 +72,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 return memberInfos;
             }
 
-            private static ImmutableDictionary<string, MemberInfo> LoadMemberInfos(Stream stream)
+            private static ImmutableDictionary<string, MemberInfo>? LoadMemberInfos(Stream stream)
             {
                 try
                 {
@@ -115,7 +115,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         }
 
                         var memberInfosBuilder = ImmutableDictionary.CreateBuilder<string, MemberInfo>();
-                        var exceptionsBuilder = ImmutableArray.CreateBuilder<(string Cref, string Accessor)>();
+                        var exceptionsBuilder = ImmutableArray.CreateBuilder<(string Cref, string? Accessor)>();
                         var inheritDocCrefsBuilder = ImmutableArray.CreateBuilder<string>();
 
                         while (xmlReader.NodeType != XmlNodeType.None)
@@ -155,8 +155,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                                                 {
                                                                     if (XmlEquals(xmlReader.Name, "exception"))
                                                                     {
-                                                                        string cref = null;
-                                                                        string accessor = null;
+                                                                        string? cref = null;
+                                                                        string? accessor = null;
                                                                         while (xmlReader.MoveToNextAttribute())
                                                                         {
                                                                             if (XmlEquals(xmlReader.Name, "cref"))
@@ -165,18 +165,20 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                                                                 accessor = xmlReader.Value;
                                                                         }
 
-                                                                        exceptionsBuilder.Add((cref, accessor));
+                                                                        if (cref != null)
+                                                                            exceptionsBuilder.Add((cref, accessor));
                                                                     }
                                                                     else if (XmlEquals(xmlReader.Name, "inheritdoc"))
                                                                     {
-                                                                        string cref = null;
+                                                                        string? cref = null;
                                                                         while (xmlReader.MoveToNextAttribute())
                                                                         {
                                                                             if (XmlEquals(xmlReader.Name, "cref"))
                                                                                 cref = xmlReader.Value;
                                                                         }
 
-                                                                        inheritDocCrefsBuilder.Add(cref);
+                                                                        if (cref != null)
+                                                                            inheritDocCrefsBuilder.Add(cref);
                                                                     }
                                                                 }
 
@@ -220,13 +222,13 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public readonly struct MemberInfo
             {
-                public MemberInfo(ImmutableArray<(string, string)> exceptions, ImmutableArray<string> inheritDocCrefs)
+                public MemberInfo(ImmutableArray<(string Cref, string? Accessor)> exceptions, ImmutableArray<string> inheritDocCrefs)
                 {
                     Exceptions = exceptions;
                     InheritDocCrefs = inheritDocCrefs;
                 }
 
-                public ImmutableArray<(string Cref, string Accessor)> Exceptions { get; }
+                public ImmutableArray<(string Cref, string? Accessor)> Exceptions { get; }
 
                 public ImmutableArray<string> InheritDocCrefs { get; }
             }

@@ -13,7 +13,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
     internal readonly struct MemberExceptionAdjustment
     {
-        public readonly string Accessor;
+        public readonly string? Accessor;
 
         public readonly ExceptionAdjustmentKind Kind;
 
@@ -32,7 +32,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         public readonly LinePositionSpan ExceptionTypeIdLineSpan;
 
         public MemberExceptionAdjustment(
-            string accessor,
+            string? accessor,
             ExceptionAdjustmentKind kind,
             string exceptionTypeId,
             TextSpan symbolIdSpan,

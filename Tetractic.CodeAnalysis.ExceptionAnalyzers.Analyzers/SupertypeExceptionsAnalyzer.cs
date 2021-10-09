@@ -105,7 +105,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             var cancellationToken = symbolContext.CancellationToken;
 
-            ExceptionTypesBuilder builder = null;
+            ExceptionTypesBuilder? builder = null;
 
             var documentedExceptionTypes = documentedExceptionTypesProvider.GetDocumentedExceptionTypes(symbol, cancellationToken);
 
@@ -135,7 +135,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             var unexpectedExceptionTypes = builder.ToImmutable();
                             builder.Clear();
 
-                            var location = symbol.GetFirstLocationOrDefault();
+                            var location = symbol.GetFirstLocationOrNone();
 
                             ReportDiagnostic(symbolContext, location, accessorKind, overriddenSymbol.ContainingType, overriddenSymbol, unexpectedExceptionTypes);
                         }
@@ -174,7 +174,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                     var unexpectedExceptionTypes = builder.ToImmutable();
                                     builder.Clear();
 
-                                    var location = symbol.GetFirstLocationOrDefault();
+                                    var location = symbol.GetFirstLocationOrNone();
 
                                     ReportDiagnostic(symbolContext, location, accessorKind, interfaceSymbol, interfaceMemberSymbol, unexpectedExceptionTypes);
                                 }
@@ -191,7 +191,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.OriginalDefinition.GetDocumentationCommentId()));
 
-            string accessor = DocumentedExceptionTypesProvider.GetAccessorName(accessorKind);
+            string? accessor = DocumentedExceptionTypesProvider.GetAccessorName(accessorKind);
 
             var builder = ImmutableDictionary.CreateBuilder<string, string>();
 

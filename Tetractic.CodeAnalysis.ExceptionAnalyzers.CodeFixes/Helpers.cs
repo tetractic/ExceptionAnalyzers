@@ -29,7 +29,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             parameterOptions: SymbolDisplayParameterOptions.IncludeParamsRefOut | SymbolDisplayParameterOptions.IncludeType,
             miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes | SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers);
 
-        public static SyntaxTriviaList AddExceptionXmlElement(SyntaxTriviaList leadingTrivia, string cref, string accessor)
+        public static SyntaxTriviaList AddExceptionXmlElement(SyntaxTriviaList leadingTrivia, string cref, string? accessor)
         {
             SyntaxList<XmlAttributeSyntax> attributes;
 
@@ -67,7 +67,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return leadingTrivia.Add(trivia);
         }
 
-        public static CodeAction GetAdditionAdjustmentCodeAction(Document document, string memberId, ISymbol member, string accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
+        public static CodeAction GetAdditionAdjustmentCodeAction(Document document, string memberId, ISymbol? member, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
         {
             var codeActions = exceptionTypeIdsAndTypes
                 .Select(x =>
@@ -125,7 +125,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 isInlinable: false);
         }
 
-        public static CodeAction GetRemovalAdjustmentCodeAction(Document document, string memberId, ISymbol member, string accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
+        public static CodeAction GetRemovalAdjustmentCodeAction(Document document, string memberId, ISymbol? member, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
         {
             var codeActions = exceptionTypeIdsAndTypes
                 .Select(x =>
@@ -208,12 +208,12 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return endOfLine;
         }
 
-        private static string GetRemovalAdjustmentLine(string memberId, string accessor, string exceptionTypeId)
+        private static string GetRemovalAdjustmentLine(string memberId, string? accessor, string exceptionTypeId)
         {
             return $"{memberId} -{accessor} {exceptionTypeId}";
         }
 
-        private static string GetAdditionAdjustmentLine(string memberId, string accessor, string exceptionTypeId)
+        private static string GetAdditionAdjustmentLine(string memberId, string? accessor, string exceptionTypeId)
         {
             return $"{memberId} +{accessor} {exceptionTypeId}";
         }
@@ -247,7 +247,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             return solution == project.Solution
                 ? project
-                : solution.GetProject(project.Id);
+                : solution.GetProject(project.Id)!;
         }
 
         private static async Task<Project> TryAddAdjustmentLine(Project project, string line, CancellationToken cancellationToken)
@@ -265,7 +265,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                     text = AddAdjustmentLine(text, line, endOfLine);
 
-                    return project.Solution.WithAdditionalDocumentText(adjustmentsDocument.Id, text).GetProject(project.Id);
+                    return project.Solution.WithAdditionalDocumentText(adjustmentsDocument.Id, text).GetProject(project.Id)!;
                 }
             }
 

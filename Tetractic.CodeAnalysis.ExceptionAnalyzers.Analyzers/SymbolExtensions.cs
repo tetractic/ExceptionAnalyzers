@@ -13,13 +13,13 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
     internal static class SymbolExtensions
     {
-        public static Location GetFirstLocationOrDefault(this ISymbol symbol)
+        public static Location GetFirstLocationOrNone(this ISymbol symbol)
         {
             var locations = symbol.Locations;
-            return locations.Length > 0 ? locations[0] : null;
+            return locations.Length > 0 ? locations[0] : Location.None;
         }
 
-        public static IMethodSymbol GetParameterlessConstructor(this INamedTypeSymbol type)
+        public static IMethodSymbol? GetParameterlessConstructor(this INamedTypeSymbol type)
         {
             foreach (var constructor in type.InstanceConstructors)
                 if (constructor.Parameters.IsEmpty)

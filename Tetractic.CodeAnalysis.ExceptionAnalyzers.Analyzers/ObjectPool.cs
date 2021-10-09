@@ -18,7 +18,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
     {
         private readonly Wrapper[] _items;
 
-        private T _firstItem;
+        private T? _firstItem;
 
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is less than
         ///     one.</exception>
@@ -69,7 +69,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         [DebuggerDisplay("{Value}")]
         private struct Wrapper
         {
-            public T Value;
+            public T? Value;
         }
     }
 }

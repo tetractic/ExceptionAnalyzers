@@ -15,6 +15,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Xml;
@@ -43,38 +44,32 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypes(ISymbol symbol, CancellationToken cancellationToken)
         {
-            SymbolStack symbolStack = null;
+            SymbolStack? symbolStack = null;
             return GetDocumentedExceptionTypes(symbol, ref symbolStack, cancellationToken);
         }
 
         public bool TryGetDocumentedExceptionTypes(ISymbol symbol, out ImmutableArray<DocumentedExceptionType> exceptionTypes, CancellationToken cancellationToken)
         {
-            SymbolStack symbolStack = null;
+            SymbolStack? symbolStack = null;
             return TryGetDocumentedExceptionTypes(symbol, out exceptionTypes, ref symbolStack, cancellationToken);
         }
 
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="accessorKind"/> is not
         ///     defined.</exception>
-        internal static string GetAccessorName(AccessorKind accessorKind)
+        internal static string? GetAccessorName(AccessorKind accessorKind)
         {
-            switch (accessorKind)
+            return accessorKind switch
             {
-                case AccessorKind.Unspecified:
-                    return null;
-                case AccessorKind.Get:
-                    return "get";
-                case AccessorKind.Set:
-                    return "set";
-                case AccessorKind.Add:
-                    return "add";
-                case AccessorKind.Remove:
-                    return "remove";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(accessorKind));
-            }
+                AccessorKind.Unspecified => null,
+                AccessorKind.Get => "get",
+                AccessorKind.Set => "set",
+                AccessorKind.Add => "add",
+                AccessorKind.Remove => "remove",
+                _ => throw new ArgumentOutOfRangeException(nameof(accessorKind)),
+            };
         }
 
-        private static bool TryGetAccessorKind(string accessor, out AccessorKind accessorKind)
+        private static bool TryGetAccessorKind(string? accessor, out AccessorKind accessorKind)
         {
             switch (accessor)
             {
@@ -176,21 +171,21 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
         }
 
-        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypes(ISymbol symbol, ref SymbolStack symbolStack, CancellationToken cancellationToken)
+        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypes(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
             var result = GetDocumentedExceptionTypesOrDefault(symbol, ref symbolStack, cancellationToken);
 
             return result.IsDefault ? ImmutableArray<DocumentedExceptionType>.Empty : result;
         }
 
-        private bool TryGetDocumentedExceptionTypes(ISymbol symbol, out ImmutableArray<DocumentedExceptionType> exceptionTypes, ref SymbolStack symbolStack, CancellationToken cancellationToken)
+        private bool TryGetDocumentedExceptionTypes(ISymbol symbol, out ImmutableArray<DocumentedExceptionType> exceptionTypes, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
             exceptionTypes = GetDocumentedExceptionTypesOrDefault(symbol, ref symbolStack, cancellationToken);
 
             return !exceptionTypes.IsDefault;
         }
 
-        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefault(ISymbol symbol, ref SymbolStack symbolStack, CancellationToken cancellationToken)
+        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefault(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
             symbol = symbol.OriginalDefinition;
 
@@ -209,13 +204,13 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return result;
         }
 
-        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefaultFromSyntax(ISymbol symbol, ref SymbolStack symbolStack, CancellationToken cancellationToken)
+        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefaultFromSyntax(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
-            DocumentedExceptionTypesBuilder builder = null;
+            DocumentedExceptionTypesBuilder? builder = null;
 
             foreach (var declarationReference in symbol.DeclaringSyntaxReferences)
             {
-                SemanticModel semanticModel = null;
+                SemanticModel? semanticModel = null;
 
                 var declaration = declarationReference.GetSyntax(cancellationToken);
 
@@ -296,8 +291,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         if (xmlName.Prefix == null &&
                             XmlEquals(xmlName.LocalName.ValueText, "exception"))
                         {
-                            ISymbol crefSymbol = null;
-                            string accessor = null;
+                            ISymbol? crefSymbol = null;
+                            string? accessor = null;
                             foreach (var xmlAttribute in xmlAttributes)
                             {
                                 if (xmlAttribute.Kind() == SyntaxKind.XmlCrefAttribute &&
@@ -326,7 +321,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         else if (xmlName.Prefix == null &&
                                  XmlEquals(xmlName.LocalName.ValueText, "inheritdoc"))
                         {
-                            ISymbol crefSymbol = null;
+                            ISymbol? crefSymbol = null;
                             foreach (var xmlAttribute in xmlAttributes)
                             {
                                 if (xmlAttribute.Kind() == SyntaxKind.XmlCrefAttribute &&
@@ -361,7 +356,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             return default;
 
-            string GetValueText(SyntaxTokenList textTokens)
+            static string GetValueText(SyntaxTokenList textTokens)
             {
                 switch (textTokens.Count)
                 {
@@ -378,7 +373,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
-        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefaultFromSymbol(ISymbol symbol, ref SymbolStack symbolStack, CancellationToken cancellationToken)
+        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefaultFromSymbol(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
             string documentationCommentXml = symbol.GetDocumentationCommentXml(cancellationToken: cancellationToken);
             if (string.IsNullOrEmpty(documentationCommentXml))
@@ -420,8 +415,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         {
                             if (XmlEquals(xmlReader.Name, "exception"))
                             {
-                                string cref = null;
-                                string accessor = null;
+                                string? cref = null;
+                                string? accessor = null;
                                 while (xmlReader.MoveToNextAttribute())
                                 {
                                     if (XmlEquals(xmlReader.Name, "cref"))
@@ -434,7 +429,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             }
                             else if (XmlEquals(xmlReader.Name, "inheritdoc"))
                             {
-                                string cref = null;
+                                string? cref = null;
                                 while (xmlReader.MoveToNextAttribute())
                                 {
                                     if (XmlEquals(xmlReader.Name, "cref"))
@@ -465,7 +460,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return exceptionTypes;
         }
 
-        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefaultFromXmlFile(ISymbol symbol, ref SymbolStack symbolStack, CancellationToken cancellationToken)
+        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefaultFromXmlFile(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -488,7 +483,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             var builder = DocumentedExceptionTypesBuilder.Allocate();
 
-            foreach ((string cref, string accessor) in memberInfo.Exceptions)
+            foreach ((string cref, string? accessor) in memberInfo.Exceptions)
                 HandleExceptionTag(symbol, builder, cref, null, accessor);
 
             foreach (string cref in memberInfo.InheritDocCrefs)
@@ -502,7 +497,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return exceptionTypes;
         }
 
-        private void HandleExceptionTag(ISymbol symbol, DocumentedExceptionTypesBuilder builder, string cref, ISymbol crefSymbol, string accessor)
+        private void HandleExceptionTag(ISymbol symbol, DocumentedExceptionTypesBuilder builder, string? cref, ISymbol? crefSymbol, string? accessor)
         {
             _ = symbol;
 
@@ -518,7 +513,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
-        private void HandleInheritDocTag(ISymbol symbol, DocumentedExceptionTypesBuilder builder, string cref, ISymbol crefSymbol, ref SymbolStack symbolStack, CancellationToken cancellationToken)
+        private void HandleInheritDocTag(ISymbol symbol, DocumentedExceptionTypesBuilder builder, string? cref, ISymbol? crefSymbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
             if (cref != null || crefSymbol != null)
             {
@@ -530,7 +525,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 {
                     if (cref != null)
                         crefSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(cref, Compilation);
-                    if (!symbolStack.Contains(crefSymbol))
+                    if (crefSymbol != null && !symbolStack.Contains(crefSymbol))
                         foreach (var documentedExceptionType in GetDocumentedExceptionTypes(crefSymbol, ref symbolStack, cancellationToken))
                             builder.Add(documentedExceptionType);
                 }
@@ -585,13 +580,13 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
-        private void AdjustDocumentedExceptionTypes(ISymbol symbol, ref DocumentedExceptionTypesBuilder builder)
+        private void AdjustDocumentedExceptionTypes(ISymbol symbol, [NotNullIfNotNull("builder")] ref DocumentedExceptionTypesBuilder? builder)
         {
             AdjustDocumentedExceptionTypes(symbol, ref builder, ExceptionAdjustments.Global);
             AdjustDocumentedExceptionTypes(symbol, ref builder, _adjustments);
         }
 
-        private void AdjustDocumentedExceptionTypes(ISymbol symbol, ref DocumentedExceptionTypesBuilder builder, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments)
+        private void AdjustDocumentedExceptionTypes(ISymbol symbol, [NotNullIfNotNull("builder")] ref DocumentedExceptionTypesBuilder? builder, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments)
         {
             string symbolId = symbol.OriginalDefinition.GetDocumentationCommentId();
             if (symbolId == null)

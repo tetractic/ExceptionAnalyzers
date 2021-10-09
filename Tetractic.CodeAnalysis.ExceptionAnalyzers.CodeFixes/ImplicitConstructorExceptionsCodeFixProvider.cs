@@ -25,7 +25,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
     {
         public sealed override ImmutableArray<string> FixableDiagnosticIds { get; } = ImmutableArray.Create(ImplicitConstructorExceptionsAnalyzer.DiagnosticId);
 
-        public sealed override FixAllProvider GetFixAllProvider() => null;
+        public sealed override FixAllProvider? GetFixAllProvider() => null;
 
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {

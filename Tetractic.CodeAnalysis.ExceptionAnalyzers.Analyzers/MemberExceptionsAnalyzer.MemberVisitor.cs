@@ -22,7 +22,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         private sealed class MemberVisitor : Visitor
         {
             // Member to report in diagnostic.
-            private ISymbol _symbol;
+            private ISymbol _symbol = null!;
 
             // Exception types documented on member.
             private ImmutableArray<DocumentedExceptionType> _documentedExceptionTypes;
@@ -72,27 +72,16 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 {
                     foreach (var accessorSyntax in basePropertySyntax.AccessorList.Accessors)
                     {
-                        AccessorKind accessorKind;
-                        switch (accessorSyntax.Kind())
+                        var accessorKind = accessorSyntax.Kind() switch
                         {
-                            case SyntaxKind.GetAccessorDeclaration:
-                                accessorKind = AccessorKind.Get;
-                                break;
-                            case SyntaxKind.SetAccessorDeclaration:
-                                accessorKind = AccessorKind.Set;
-                                break;
-                            case SyntaxKind.AddAccessorDeclaration:
-                                accessorKind = AccessorKind.Add;
-                                break;
-                            case SyntaxKind.RemoveAccessorDeclaration:
-                                accessorKind = AccessorKind.Remove;
-                                break;
-                            default:
-                                accessorKind = AccessorKind.Unspecified;
-                                break;
-                        }
+                            SyntaxKind.GetAccessorDeclaration => AccessorKind.Get,
+                            SyntaxKind.SetAccessorDeclaration => AccessorKind.Set,
+                            SyntaxKind.AddAccessorDeclaration => AccessorKind.Add,
+                            SyntaxKind.RemoveAccessorDeclaration => AccessorKind.Remove,
+                            _ => AccessorKind.Unspecified,
+                        };
 
-                        var bodySyntax = (SyntaxNode)accessorSyntax.Body ?? accessorSyntax.ExpressionBody;
+                        var bodySyntax = (SyntaxNode?)accessorSyntax.Body ?? accessorSyntax.ExpressionBody;
 
                         Analyze(symbol, accessorKind, bodySyntax);
                     }
@@ -138,7 +127,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 var documentedExceptionTypes = GetDocumentedExceptionTypes(delegateType);
 
-                ExceptionTypesBuilder builder = null;
+                ExceptionTypesBuilder? builder = null;
 
                 foreach (var thrownExceptionType in thrownExceptionTypes)
                 {
@@ -194,11 +183,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 return originalThrownExceptionType.IsSubsumedBy(_documentedExceptionTypes);
             }
 
-            protected override void HandleUncaughtExceptionTypes(TextSpan span, ISymbol throwerSymbol, AccessorKind throwerAccessorKind, ImmutableArray<INamedTypeSymbol> exceptionTypes)
+            protected override void HandleUncaughtExceptionTypes(TextSpan span, ISymbol? throwerSymbol, AccessorKind throwerAccessorKind, ImmutableArray<INamedTypeSymbol> exceptionTypes)
             {
                 string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.OriginalDefinition.GetDocumentationCommentId()));
 
-                string accessor = DocumentedExceptionTypesProvider.GetAccessorName(_accessorKind);
+                string? accessor = DocumentedExceptionTypesProvider.GetAccessorName(_accessorKind);
 
                 var builder = ImmutableDictionary.CreateBuilder<string, string>();
 
@@ -213,7 +202,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     string throwerMemberId = throwerSymbol.OriginalDefinition.GetDocumentationCommentId();
                     if (throwerMemberId != null)
                     {
-                        string throwerAccessor = DocumentedExceptionTypesProvider.GetAccessorName(throwerAccessorKind);
+                        string? throwerAccessor = DocumentedExceptionTypesProvider.GetAccessorName(throwerAccessorKind);
 
                         builder.Add(PropertyKeys.ThrowerMemberId, throwerMemberId);
                         if (throwerAccessor != null)
@@ -279,7 +268,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 {
                     Visit(bodySyntax, Access.Get);
 
-                    if (!TryDequeDeferred(out _symbol, out _accessorKind, out bodySyntax))
+                    if (!TryDequeDeferred(out _symbol!, out _accessorKind, out bodySyntax!))
                         break;
 
                     _ = TryGetDocumentedExceptionTypes(_symbol, out _documentedExceptionTypes);

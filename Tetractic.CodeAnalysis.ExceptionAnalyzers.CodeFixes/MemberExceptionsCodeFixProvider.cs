@@ -28,7 +28,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             MemberExceptionsAnalyzer.AccessorDiagnosticId,
         });
 
-        public sealed override FixAllProvider GetFixAllProvider() => null;
+        public sealed override FixAllProvider? GetFixAllProvider() => null;
 
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
@@ -46,7 +46,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var diagnosticSpan = diagnostic.Location.SourceSpan;
                 var node = syntaxRoot.FindToken(diagnosticSpan.Start).Parent;
 
-                var compilation = await document.Project.GetCompilationAsync(context.CancellationToken);
+                var compilation = (await document.Project.GetCompilationAsync(context.CancellationToken))!;
 
                 string[] exceptionTypeIds = diagnostic.Properties[MemberExceptionsAnalyzer.PropertyKeys.ExceptionTypeIds].Split(',');
                 var exceptionTypeIdsAndTypes = exceptionTypeIds
@@ -55,10 +55,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 string memberId = diagnostic.Properties[MemberExceptionsAnalyzer.PropertyKeys.MemberId];
 
-                string accessor;
+                string? accessor;
                 _ = diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.Accessor, out accessor);
 
-                var declaration = GetDeclaration(node);
+                var declaration = GetDeclaration(node)!;
 
                 var codeActions = exceptionTypeIdsAndTypes
                     .Select(x =>
@@ -115,7 +115,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     if (throwerMember == null ||
                         !SymbolEqualityComparer.Default.Equals(throwerMember.ContainingAssembly, compilation.Assembly))
                     {
-                        string throwerAccessor;
+                        string? throwerAccessor;
                         _ = diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.ThrowerAccessor, out throwerAccessor);
 
                         context.RegisterCodeFix(
@@ -125,7 +125,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 }
             }
 
-            SyntaxNode GetDeclaration(SyntaxNode node)
+            static SyntaxNode? GetDeclaration(SyntaxNode node)
             {
                 foreach (var ancestorOrSelfNode in node.AncestorsAndSelf())
                 {

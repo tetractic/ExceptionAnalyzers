@@ -96,12 +96,12 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             protected override bool IsIgnoredExceptionType(INamedTypeSymbol exceptionType) => false;
 
-            protected override void HandleUncaughtExceptionType(TextSpan span, ISymbol symbol, AccessorKind accessorKind, INamedTypeSymbol exceptionType)
+            protected override void HandleUncaughtExceptionType(TextSpan span, ISymbol? symbol, AccessorKind accessorKind, INamedTypeSymbol exceptionType)
             {
                 ThrownExceptionTypesBuilder.Add(exceptionType, AccessorKind.Unspecified);
             }
 
-            protected override void HandleUncaughtExceptionTypes(TextSpan span, ISymbol symbol, AccessorKind accessorKind, ImmutableArray<INamedTypeSymbol> exceptionTypes)
+            protected override void HandleUncaughtExceptionTypes(TextSpan span, ISymbol? symbol, AccessorKind accessorKind, ImmutableArray<INamedTypeSymbol> exceptionTypes)
             {
                 foreach (var exceptionType in exceptionTypes)
                     ThrownExceptionTypesBuilder.Add(exceptionType, AccessorKind.Unspecified);

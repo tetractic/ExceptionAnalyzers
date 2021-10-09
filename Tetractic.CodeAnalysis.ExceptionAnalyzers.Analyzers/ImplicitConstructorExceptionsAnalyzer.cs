@@ -85,7 +85,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             var documentedExceptionTypes = documentedExceptionTypesProvider.GetDocumentedExceptionTypes(baseConstructor, cancellationToken);
 
-            ExceptionTypesBuilder builder = null;
+            ExceptionTypesBuilder? builder = null;
 
             foreach (var documentedExceptionType in documentedExceptionTypes)
             {

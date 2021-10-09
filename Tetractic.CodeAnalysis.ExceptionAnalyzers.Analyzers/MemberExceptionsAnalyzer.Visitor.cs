@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
@@ -31,23 +32,23 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             // Exception types declared on "catch" clauses and exception types that could be caught
             // by the general "catch" clause of each enclosing "try" block.
-            private readonly Stack<(ExceptionTypesBuilder CatchTypes, ExceptionTypesBuilder GeneralCatchRethrowTypes)> _catchTypesScopes;
+            private readonly Stack<(ExceptionTypesBuilder? CatchTypes, ExceptionTypesBuilder? GeneralCatchRethrowTypes)> _catchTypesScopes;
 
             // Exception types declared on each enclosing "catch" clause.
             private readonly Stack<ExceptionTypesBuilder> _rethrowTypesScopes;
 
             private readonly ExceptionTypesBuilder _builder;
 
-            private FunctionVisitor _functionVisitor;
+            private FunctionVisitor? _functionVisitor;
 
-            private Queue<(ISymbol Symbol, AccessorKind AccessorKind, SyntaxNode BodySyntax)> _deferred;
+            private Queue<(ISymbol Symbol, AccessorKind AccessorKind, SyntaxNode BodySyntax)>? _deferred;
 
             public Visitor(SemanticModelAnalysisContext semanticModelContext, Context context)
             {
                 SemanticModelContext = semanticModelContext;
                 Context = context;
                 _accessScopes = new Stack<Access>();
-                _catchTypesScopes = new Stack<(ExceptionTypesBuilder, ExceptionTypesBuilder)>();
+                _catchTypesScopes = new Stack<(ExceptionTypesBuilder?, ExceptionTypesBuilder?)>();
                 _rethrowTypesScopes = new Stack<ExceptionTypesBuilder>();
                 _builder = new ExceptionTypesBuilder();
             }
@@ -80,22 +81,13 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
             {
-                Access access;
-                switch (node.Kind())
+                var access = node.Kind() switch
                 {
-                    case SyntaxKind.SimpleAssignmentExpression:
-                        access = Access.Set;
-                        break;
-                    case SyntaxKind.AddAssignmentExpression:
-                        access = Access.GetAndSetOrAdd;
-                        break;
-                    case SyntaxKind.SubtractAssignmentExpression:
-                        access = Access.GetAndSetOrRemove;
-                        break;
-                    default:
-                        access = Access.GetAndSet;
-                        break;
-                }
+                    SyntaxKind.SimpleAssignmentExpression => Access.Set,
+                    SyntaxKind.AddAssignmentExpression => Access.GetAndSetOrAdd,
+                    SyntaxKind.SubtractAssignmentExpression => Access.GetAndSetOrRemove,
+                    _ => Access.GetAndSet,
+                };
 
                 Visit(node.Left, access);
 
@@ -351,8 +343,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public override void VisitTryStatement(TryStatementSyntax node)
             {
-                ExceptionTypesBuilder catchTypes = null;
-                ExceptionTypesBuilder generalCatchRethrowTypes = null;
+                ExceptionTypesBuilder? catchTypes = null;
+                ExceptionTypesBuilder? generalCatchRethrowTypes = null;
 
                 // Determine the exception types that will be caught from the "try" block.
                 foreach (var catchClause in node.Catches)
@@ -419,7 +411,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     var declaration = catchClause.Declaration;
                     if (declaration != null)
                     {
-                        catchTypes.Clear();
+                        catchTypes!.Clear();
 
                         var catchTypeInfo = SemanticModel.GetTypeInfo(declaration.Type, CancellationToken);
                         if (catchTypeInfo.Type is INamedTypeSymbol catchType)
@@ -452,7 +444,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         }
                         else
                         {
-                            catchTypes.Clear();
+                            catchTypes!.Clear();
 
                             rethrowTypes = catchTypes;
                         }
@@ -514,12 +506,12 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             protected abstract bool IsIgnoredExceptionType(INamedTypeSymbol exceptionType);
 
-            protected virtual void HandleUncaughtExceptionType(TextSpan span, ISymbol throwerSymbol, AccessorKind throwerAccessorKind, INamedTypeSymbol exceptionType)
+            protected virtual void HandleUncaughtExceptionType(TextSpan span, ISymbol? throwerSymbol, AccessorKind throwerAccessorKind, INamedTypeSymbol exceptionType)
             {
                 HandleUncaughtExceptionTypes(span, throwerSymbol, throwerAccessorKind, ImmutableArray.Create(exceptionType));
             }
 
-            protected abstract void HandleUncaughtExceptionTypes(TextSpan span, ISymbol throwerSymbol, AccessorKind throwerAccessorKind, ImmutableArray<INamedTypeSymbol> exceptionTypes);
+            protected abstract void HandleUncaughtExceptionTypes(TextSpan span, ISymbol? throwerSymbol, AccessorKind throwerAccessorKind, ImmutableArray<INamedTypeSymbol> exceptionTypes);
 
             protected ImmutableArray<DocumentedExceptionType> GetThrownExceptionTypes(ISymbol symbol)
             {
@@ -592,7 +584,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 _deferred.Enqueue((symbol, accessorKind, bodySyntax));
             }
 
-            protected bool TryDequeDeferred(out ISymbol symbol, out AccessorKind accessorKind, out SyntaxNode bodySyntax)
+            protected bool TryDequeDeferred([NotNullWhen(true)] out ISymbol? symbol, out AccessorKind accessorKind, [NotNullWhen(true)] out SyntaxNode? bodySyntax)
             {
                 if (_deferred is null || _deferred.Count == 0)
                 {
@@ -734,7 +726,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 HandleThrownExceptionTypes(node.Span, symbol, node);
             }
 
-            private void HandleThrownExceptionTypes(TextSpan span, ISymbol symbol, ExpressionSyntax node)
+            private void HandleThrownExceptionTypes(TextSpan span, ISymbol symbol, ExpressionSyntax? node)
             {
                 AccessorKinds accessorKinds;
                 switch (symbol.Kind)
@@ -764,8 +756,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         switch (_accessScopes.Peek())
                         {
                             case Access.Get:
-                                if (TryGetCreatedDelegateType(node, out var delegateType))
-                                    HandleDelegateCreation(node.Span, (IMethodSymbol)symbol, delegateType);
+                                if (TryGetCreatedDelegateType(node!, out var delegateType))
+                                    HandleDelegateCreation(node!.Span, (IMethodSymbol)symbol, delegateType);
                                 return;
                             case Access.Invoke:
                                 accessorKinds = AccessorKinds.Unspecified;
