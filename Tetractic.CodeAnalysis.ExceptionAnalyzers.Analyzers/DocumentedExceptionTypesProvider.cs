@@ -598,28 +598,39 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             if (builder == null)
                 builder = DocumentedExceptionTypesBuilder.Allocate();
 
-            foreach (var adjustment in symbolAdjustments)
+            ApplyAdjustments(symbol, builder, symbolAdjustments, unspecifiedAccessor: true);
+
+            ApplyAdjustments(symbol, builder, symbolAdjustments, unspecifiedAccessor: false);
+
+            void ApplyAdjustments(ISymbol symbol, DocumentedExceptionTypesBuilder builder, ImmutableArray<MemberExceptionAdjustment> symbolAdjustments, bool unspecifiedAccessor)
             {
-                if (adjustment.Kind != ExceptionAdjustmentKind.Removal)
-                    continue;
-                if (!TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
-                    continue;
+                foreach (var adjustment in symbolAdjustments)
+                {
+                    if ((adjustment.Accessor == null) != unspecifiedAccessor)
+                        continue;
+                    if (adjustment.Kind != ExceptionAdjustmentKind.Removal)
+                        continue;
+                    if (!TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
+                        continue;
 
-                var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, Compilation);
-                if (exceptionTypeSymbol is INamedTypeSymbol exceptionType)
-                    RemoveExceptionType(builder, symbol, exceptionType, accessorKind);
-            }
+                    var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, Compilation);
+                    if (exceptionTypeSymbol is INamedTypeSymbol exceptionType)
+                        RemoveExceptionType(builder, symbol, exceptionType, accessorKind);
+                }
 
-            foreach (var adjustment in symbolAdjustments)
-            {
-                if (adjustment.Kind != ExceptionAdjustmentKind.Addition)
-                    continue;
-                if (!TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
-                    continue;
+                foreach (var adjustment in symbolAdjustments)
+                {
+                    if ((adjustment.Accessor == null) != unspecifiedAccessor)
+                        continue;
+                    if (adjustment.Kind != ExceptionAdjustmentKind.Addition)
+                        continue;
+                    if (!TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
+                        continue;
 
-                var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, Compilation);
-                if (exceptionTypeSymbol is INamedTypeSymbol exceptionType)
-                    AddExceptionType(builder, symbol, exceptionType, accessorKind);
+                    var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, Compilation);
+                    if (exceptionTypeSymbol is INamedTypeSymbol exceptionType)
+                        AddExceptionType(builder, symbol, exceptionType, accessorKind);
+                }
             }
         }
 

@@ -274,6 +274,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private static SourceText AddAdjustmentLine(SourceText text, string line, string endOfLine)
         {
+            int symbolEnd = line.Length < 2 ? -1 : line.IndexOf(' ', 2);
+
             int position = text.Length;
 
             bool allEmpty = true;
@@ -294,35 +296,71 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     allEmpty = false;
                 }
                 string existingLine = textLine.ToString();
-                if (existingLine[0] == '#')
-                    break;
-                if (CompareAdjustmentLines(existingLine, line) < 0)
+                if (ShouldInsertAfter(existingLine, line, symbolEnd))
                     break;
                 position = textLine.Span.Start;
             }
 
-            return text.Replace(new TextSpan(position, 0), line + endOfLine);
-        }
-
-        private static int CompareAdjustmentLines(string left, string right)
-        {
-            int length = left.Length < right.Length ? left.Length : right.Length;
-            int i;
-            for (i = 0; i < length; ++i)
+            // If inserting after last line, ensure it ends with a line break.
+            if (position == text.Length && text.Lines.Count > 0)
             {
-                char leftC = left[i];
-                char rightC = right[i];
-
-                // Swap the comparison of '+' and '-' because removals are processed before
-                // additions.
-                if (leftC != rightC)
-                    return leftC == '+' && rightC == '-' ? 1
-                         : leftC == '-' && rightC == '+' ? -1
-                         : leftC < rightC ? -1 : 1;
+                var lastLine = text.Lines[text.Lines.Count - 1];
+                if (lastLine.EndIncludingLineBreak == lastLine.End &&
+                    lastLine.End != lastLine.Start)
+                {
+                    text = text.Replace(new TextSpan(position, 0), endOfLine);
+                    position = text.Length;
+                }
             }
-            return i < left.Length ? 1
-                 : i < right.Length ? -1
-                 : 0;
+
+            return text.Replace(new TextSpan(position, 0), line + endOfLine);
+
+            static bool ShouldInsertAfter(string existingLine, string line, int symbolEnd)
+            {
+                if (symbolEnd < 0)
+                    return true;
+
+                if (existingLine.Length < 2 || existingLine[0] == '#' || existingLine[1] != ':')
+                    return true;
+
+                // Compare symbol identifier (excluding kind prefix).
+                int end = Math.Min(existingLine.Length, symbolEnd);
+                int result = CompareSubstring(existingLine, line, 2, end);
+                if (result != 0)
+                    return result < 0;
+
+                // Compare presence of accessor.  Absence comes before presence.
+                if (symbolEnd >= existingLine.Length - 2 || symbolEnd >= line.Length - 2)
+                    return true;
+                bool existingLineHasAccessor = existingLine[symbolEnd + 2] != ' ';
+                bool lineHasAccessor = line[symbolEnd + 2] != ' ';
+                if (existingLineHasAccessor != lineHasAccessor)
+                    return lineHasAccessor;
+
+                // Compare operator.  '-' comes before '+'.
+                result = existingLine[symbolEnd + 1] - line[symbolEnd + 1];
+                if (result != 0)
+                    return result > 0;
+
+                // Compare the accessor and exception type identifier.
+                end = Math.Min(existingLine.Length, line.Length);
+                result = CompareSubstring(existingLine, line, symbolEnd + 2, end);
+                if (result != 0)
+                    return result < 0;
+                return existingLine.Length < line.Length;
+            }
+
+            static int CompareSubstring(string left, string right, int start, int end)
+            {
+                for (int i = start; i < end; ++i)
+                {
+                    char cLeft = left[i];
+                    char cRight = right[i];
+                    if (cLeft != cRight)
+                        return cLeft - cRight;
+                }
+                return 0;
+            }
         }
     }
 }
