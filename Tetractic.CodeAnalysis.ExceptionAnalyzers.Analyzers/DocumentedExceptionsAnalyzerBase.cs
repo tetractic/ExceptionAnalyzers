@@ -49,15 +49,15 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 var compilation = documentedExceptionTypesProvider.Compilation;
 
-                var uncheckedExceptionTypes = options.TryGetValue("dotnet_unchecked_exceptions", out string uncheckedExceptionNames)
-                    ? GetTypeSymbolsByDeclarationId(compilation, uncheckedExceptionNames)
-                    : GetDefaultUncheckedExceptionTypeSymbols(compilation);
+                var ignoredExceptionTypes = options.TryGetValue("dotnet_ignored_exceptions", out string ignoredExceptionNames)
+                    ? GetTypeSymbolsByDeclarationId(compilation, ignoredExceptionNames)
+                    : GetDefaultIgnoredExceptionTypeSymbols(compilation);
 
                 var intransitiveExceptionTypes = options.TryGetValue("dotnet_intransitive_exceptions", out string intransitiveExceptionTypeNames)
                     ? GetTypeSymbolsByDeclarationId(compilation, intransitiveExceptionTypeNames)
                     : GetDefaultIntransitiveExceptionTypeSymbols(compilation);
 
-                context = contextCache.GetOrAdd(options, new Context(documentedExceptionTypesProvider, uncheckedExceptionTypes, intransitiveExceptionTypes));
+                context = contextCache.GetOrAdd(options, new Context(documentedExceptionTypesProvider, ignoredExceptionTypes, intransitiveExceptionTypes));
             }
 
             return context;
@@ -86,7 +86,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 : builder.ToImmutable();
         }
 
-        private static ImmutableArray<INamedTypeSymbol> GetDefaultUncheckedExceptionTypeSymbols(Compilation compilation)
+        private static ImmutableArray<INamedTypeSymbol> GetDefaultIgnoredExceptionTypeSymbols(Compilation compilation)
         {
             return GetTypeSymbolsByDeclarationId(compilation, new[]
             {

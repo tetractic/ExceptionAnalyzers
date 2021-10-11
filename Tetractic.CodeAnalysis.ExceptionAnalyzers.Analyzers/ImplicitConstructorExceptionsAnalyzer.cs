@@ -89,7 +89,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             foreach (var documentedExceptionType in documentedExceptionTypes)
             {
-                if (!documentedExceptionType.ExceptionType.HasBaseConversionTo(context.UncheckedExceptionTypes))
+                if (!documentedExceptionType.ExceptionType.HasBaseConversionTo(context.IgnoredExceptionTypes))
                 {
                     if (builder == null)
                         builder = ExceptionTypesBuilder.Allocate();

@@ -18,11 +18,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             public Context(
                 DocumentedExceptionTypesProvider documentedExceptionTypesProvider,
-                ImmutableArray<INamedTypeSymbol> uncheckedExceptionTypes,
+                ImmutableArray<INamedTypeSymbol> ignoredExceptionTypes,
                 ImmutableArray<INamedTypeSymbol> intransitiveExceptionTypes)
             {
                 DocumentedExceptionTypesProvider = documentedExceptionTypesProvider;
-                UncheckedExceptionTypes = uncheckedExceptionTypes;
+                IgnoredExceptionTypes = ignoredExceptionTypes;
                 IntransitiveExceptionTypes = intransitiveExceptionTypes;
             }
 
@@ -30,7 +30,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public DocumentedExceptionTypesProvider DocumentedExceptionTypesProvider { get; }
 
-            public ImmutableArray<INamedTypeSymbol> UncheckedExceptionTypes { get; }
+            public ImmutableArray<INamedTypeSymbol> IgnoredExceptionTypes { get; }
 
             public ImmutableArray<INamedTypeSymbol> IntransitiveExceptionTypes { get; }
         }

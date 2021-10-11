@@ -308,7 +308,7 @@ class C
         }
 
         [TestMethod]
-        public async Task ThrowUnchecked()
+        public async Task ThrowIgnored()
         {
             var source = @"
 using System;

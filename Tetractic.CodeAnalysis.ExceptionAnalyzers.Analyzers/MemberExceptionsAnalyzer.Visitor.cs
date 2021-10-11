@@ -808,7 +808,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             private bool TryIgnoreOrAddCaughtExceptionType(INamedTypeSymbol exceptionType, INamedTypeSymbol originalExceptionType)
             {
-                if (originalExceptionType.HasBaseConversionTo(Context.UncheckedExceptionTypes))
+                if (originalExceptionType.HasBaseConversionTo(Context.IgnoredExceptionTypes))
                     return true;
 
                 // Look for enclosing "catch" clause.

@@ -136,7 +136,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                     var originalExceptionType = thrownExceptionType.ExceptionType.OriginalDefinition;
                     var originalThrownExceptionType = new DocumentedExceptionType(originalExceptionType, thrownExceptionType.AccessorKind);
-                    if (!originalExceptionType.HasBaseConversionTo(Context.UncheckedExceptionTypes) &&
+                    if (!originalExceptionType.HasBaseConversionTo(Context.IgnoredExceptionTypes) &&
                         !originalThrownExceptionType.IsSubsumedBy(documentedExceptionTypes))
                     {
                         if (builder == null)
