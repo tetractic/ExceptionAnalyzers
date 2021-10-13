@@ -151,8 +151,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 Visit(node.Expression, Access.Get);
 
+                // `GetSymbolInfo(...)` may return an undesired non-indexer symbol when
+                // `node.Expression` is an array.
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
-                if (symbol != null)
+                if (symbol != null && symbol.Kind == SymbolKind.Property)
                 {
                     var span = node.ArgumentList.OpenBracketToken.Span;
                     HandleThrownExceptionTypes(span, symbol, null);

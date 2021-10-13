@@ -493,11 +493,33 @@ class C
     }
 }";
 
-            var expected = new[]
-            {
-                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "IOException"),
-            };
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "IOException");
             await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task ArrayElementAccessWithImplicitOperator()
+        {
+            // This test case is interesting only because `GetSymbolInfo(node)` returns the implicit
+            // operator symbol when `node` is `ElementAccessExpressionSyntax` and
+            // `ElementAccessExpressionSyntax.Expression` is an array.
+
+            var source = @"
+using System;
+
+class C
+{
+    /// <exception cref=""NotImplementedException""/>
+    public static implicit operator int(C c) => throw new NotImplementedException();
+
+    public void M()
+    {
+        var cs = new[] { new C() };
+        int i = cs[0];
+    }
+}";
+
+            await VerifyCS.VerifyAnalyzerAsync(source);
         }
     }
 }
