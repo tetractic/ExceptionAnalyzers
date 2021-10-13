@@ -51,15 +51,15 @@ void Demo4(bool b)
 
 ### .editorconfig
 
-#### `dotnet_ignored_exceptions`
+#### dotnet_ignored_exceptions
 
 Provides a list of exception types that will be ignored by exception analysis.
 
 Setting name: `dotnet_ignored_exceptions`\
 Value: A comma-separated list of fully-qualified type names.\
-Default value: `System.NullReferenceException, System.UnreachableException`
+Default value: `System.NullReferenceException, System.StackOverflowException, System.UnreachableException`
 
-#### `dotnet_intransitive_exceptions`
+#### dotnet_intransitive_exceptions
 
 Provides a list of exception types that will be ignored by exception analysis when not thrown directly.  This is useful for exception types that generally indicate incorrect code when thrown.  The conditions under which these exception types are thrown should be documented, but those conditions should be avoidable and avoided in correctly-written code.
 
@@ -67,7 +67,7 @@ For example, it should be possible to avoid providing unacceptable arguments tha
 
 Setting name: `dotnet_intransitive_exceptions`\
 Value: A comma-separated list of fully-qualified type names.\
-Default value: `System.ArgumentException, System.IndexOutOfRangeException, System.InvalidOperationException, System.Collections.Generic.KeyNotFoundException`
+Default value: `System.ArgumentException, System.IndexOutOfRangeException, System.InvalidCastException, System.InvalidOperationException, System.Collections.Generic.KeyNotFoundException`
 
 ### Exception Adjustments
 

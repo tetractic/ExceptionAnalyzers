@@ -91,6 +91,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return GetTypeSymbolsByDeclarationId(compilation, new[]
             {
                 "System.NullReferenceException",
+                "System.StackOverflowException",
                 "System.UnreachableException",
             });
         }
@@ -101,6 +102,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 "System.ArgumentException",
                 "System.IndexOutOfRangeException",
+                "System.InvalidCastException",
                 "System.InvalidOperationException",
                 "System.Collections.Generic.KeyNotFoundException",
             });
