@@ -634,6 +634,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         delegateType = namedDelegateSymbol.TypeArguments[0];
                 }
 
+                if (delegateType.TypeKind == TypeKind.Error)
+                    return false;
+
                 Debug.Assert(delegateType.TypeKind == TypeKind.Delegate, $"Expected delegate but type kind is {delegateType.TypeKind}.");
 
                 return true;
