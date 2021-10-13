@@ -101,6 +101,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
                 if (symbol != null)
                 {
+                    Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing binary expression but symbol kind is {symbol.Kind}.");
+                    Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.BuiltinOperator ||
+                                 ((IMethodSymbol)symbol).MethodKind == MethodKind.UserDefinedOperator, $"Analyzing binary expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
+
                     var span = node.OperatorToken.Span;
                     HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
                 }
@@ -113,6 +117,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
                 if (symbol != null)
                 {
+                    Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing cast expression but symbol kind is {symbol.Kind}.");
+                    Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.Conversion, $"Analyzing cast expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
+
                     var span = TextSpan.FromBounds(node.OpenParenToken.SpanStart, node.CloseParenToken.Span.End);
                     HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
                 }
@@ -134,11 +141,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
                 if (symbol != null)
                 {
-                    if (symbol.Kind != SymbolKind.Method)
-                    {
-                        Debug.Assert(false, $"Analyzing constructor initializer but symbol kind is {symbol.Kind}.");
-                        return;
-                    }
+                    Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing constructor initializer but symbol kind is {symbol.Kind}.");
+                    Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.Constructor, $"Analyzing constructor initializer but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
 
                     var span = node.ThisOrBaseKeyword.Span;
                     HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
@@ -151,8 +155,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 Visit(node.Expression, Access.Get);
 
-                // `GetSymbolInfo(...)` may return an undesired non-indexer symbol when
-                // `node.Expression` is an array.
+                // `GetSymbolInfo(...)` may return an undesired non-property (i.e., non-indexer)
+                // symbol when `node.Expression` is an array.
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
                 if (symbol != null && symbol.Kind == SymbolKind.Property)
                 {
@@ -234,6 +238,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
                 if (symbol != null)
                 {
+                    Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing object creation expression but symbol kind is {symbol.Kind}.");
+                    Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.Constructor, $"Analyzing object creation expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
+
                     var span = node.Type.Span;
                     HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
                 }
@@ -259,6 +266,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         Visit(node.Operand, Access.GetAndSet);
                         break;
 
+                    case SyntaxKind.SuppressNullableWarningExpression:
+                        Visit(node.Operand);
+                        return;
+
                     default:
                         Visit(node.Operand);
                         break;
@@ -267,6 +278,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
                 if (symbol != null)
                 {
+                    Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing postfix unary expression but symbol kind is {symbol.Kind}.");
+                    Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.BuiltinOperator ||
+                                 ((IMethodSymbol)symbol).MethodKind == MethodKind.UserDefinedOperator, $"Analyzing postfix unary expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
+
                     var span = node.OperatorToken.Span;
                     HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
                 }
@@ -277,6 +292,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
                 if (symbol != null)
                 {
+                    Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing prefix unary expression but symbol kind is {symbol.Kind}.");
+                    Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.BuiltinOperator ||
+                                 ((IMethodSymbol)symbol).MethodKind == MethodKind.UserDefinedOperator, $"Analyzing prefix unary expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
+
                     var span = node.OperatorToken.Span;
                     HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
                 }
@@ -710,6 +729,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
                 if (symbol != null)
                 {
+                    Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing anonymous function expression but symbol kind is {symbol.Kind}.");
+                    Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.AnonymousFunction, $"Analyzing anonymous function expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
+
                     var bodySyntax = node.Body;
 
                     EnqueueDeferred(symbol, AccessorKind.Unspecified, bodySyntax);
