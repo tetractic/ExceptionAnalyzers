@@ -97,6 +97,10 @@ Asynchronous code is somewhat problematic for exception analysis because control
 
 Exception Analyzers does not perform any data-flow analysis.  As long as the `Task` returned from an asynchronous method invocation is awaited immediately, exception analysis will work as expected; otherwise, not.
 
+### Implicit Conversion Operators
+
+Exception Analyzers does not currently consider implicit conversion operator invocations during analysis.
+
 ### Implicit Method Invocations
 
-Some C# syntax implicitly invokes methods.  `using` invokes `Dispose()`.  `foreach` invokes `GetEnumerator()`, `MoveNext()`, and the getter for `Current`.  Exception Analyzers does not currently consider these implicit method invocations during analysis.
+Some C# syntax implicitly invokes methods.  For example, `using` invokes `Dispose()`.  Exception Analyzers does not currently consider these implicit method invocations during analysis.
