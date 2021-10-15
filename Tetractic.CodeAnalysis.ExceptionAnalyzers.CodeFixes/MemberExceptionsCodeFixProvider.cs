@@ -85,9 +85,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                         cref,
                                         accessor));
 
-                                syntaxRoot = syntaxRoot.ReplaceNode(declaration, newDeclaration);
+                                var newSyntaxRoot = syntaxRoot.ReplaceNode(declaration, newDeclaration);
 
-                                return document.WithSyntaxRoot(syntaxRoot);
+                                return document.WithSyntaxRoot(newSyntaxRoot);
                             },
                             equivalenceKey: $"{memberId} {accessor} {exceptionTypeId}");
                     })

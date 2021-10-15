@@ -90,9 +90,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                 var newClassDeclaration = classDeclaration.WithMembers(
                                     classDeclaration.Members.Insert(0, constructorDeclaration));
 
-                                syntaxRoot = syntaxRoot.ReplaceNode(classDeclaration, newClassDeclaration);
+                                var newSyntaxRoot = syntaxRoot.ReplaceNode(classDeclaration, newClassDeclaration);
 
-                                return document.WithSyntaxRoot(syntaxRoot);
+                                return document.WithSyntaxRoot(newSyntaxRoot);
                             },
                             equivalenceKey: $"{classId} {exceptionTypeId}");
                     })
