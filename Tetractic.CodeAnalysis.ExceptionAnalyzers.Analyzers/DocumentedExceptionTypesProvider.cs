@@ -29,18 +29,18 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             ConformanceLevel = ConformanceLevel.Fragment,
         };
 
-        private readonly ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> _adjustments;
-
         private readonly ConcurrentDictionary<ISymbol, ImmutableArray<DocumentedExceptionType>> _cache;
 
         public DocumentedExceptionTypesProvider(Compilation compilation, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments)
         {
             Compilation = compilation;
-            _adjustments = adjustments;
+            Adjustments = adjustments;
             _cache = new ConcurrentDictionary<ISymbol, ImmutableArray<DocumentedExceptionType>>();
         }
 
         public Compilation Compilation { get; }
+
+        public ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> Adjustments { get; }
 
         public ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypes(ISymbol symbol, CancellationToken cancellationToken)
         {
@@ -583,7 +583,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         private void AdjustDocumentedExceptionTypes(ISymbol symbol, [NotNullIfNotNull("builder")] ref DocumentedExceptionTypesBuilder? builder)
         {
             AdjustDocumentedExceptionTypes(symbol, ref builder, ExceptionAdjustments.Global);
-            AdjustDocumentedExceptionTypes(symbol, ref builder, _adjustments);
+            AdjustDocumentedExceptionTypes(symbol, ref builder, Adjustments);
         }
 
         private void AdjustDocumentedExceptionTypes(ISymbol symbol, [NotNullIfNotNull("builder")] ref DocumentedExceptionTypesBuilder? builder, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments)
@@ -640,7 +640,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             if (symbolId == null)
                 return default;
 
-            if (!_adjustments.TryGetValue(symbolId, out var symbolAdjustments))
+            if (!Adjustments.TryGetValue(symbolId, out var symbolAdjustments))
                 return default;
 
             var builder = DocumentedExceptionTypesBuilder.Allocate();

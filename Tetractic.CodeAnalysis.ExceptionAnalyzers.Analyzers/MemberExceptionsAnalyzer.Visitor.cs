@@ -12,6 +12,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -514,7 +515,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             continue;
 
                         var originalExceptionType = thrownExceptionType.ExceptionType.OriginalDefinition;
-                        if (!originalExceptionType.HasBaseConversionTo(Context.IntransitiveExceptionTypes))
+                        if (!originalExceptionType.HasBaseConversionTo(Context.IntransitiveExceptionTypes) || IsThrowHelper(throwerSymbol, originalExceptionType))
                             if (!TryIgnoreOrAddCaughtExceptionType(thrownExceptionType.ExceptionType, originalExceptionType))
                                 _builder.Add(thrownExceptionType.ExceptionType);
                     }
@@ -854,6 +855,75 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 }
 
                 HandleThrownExceptionTypes(span, symbol, accessorKinds);
+            }
+
+            /// <summary>
+            /// Indicates whether a symbol is a throw helper.
+            /// </summary>
+            private bool IsThrowHelper(ISymbol symbol, INamedTypeSymbol originalExceptionType)
+            {
+                if (symbol.Kind != SymbolKind.Method)
+                    return false;
+
+                string? symbolId = symbol.GetDocumentationCommentId();
+                if (symbolId is null)
+                    return false;
+
+                string? exceptionTypeId = originalExceptionType.GetDocumentationCommentId();
+
+                bool result = IsThrowHelperName(symbol.Name);
+
+                if (Context.DocumentedExceptionTypesProvider.Adjustments.TryGetValue(symbolId, out var adjustments))
+                {
+                    const string throwHelperAccessor = "$throw";
+
+                    if (result)
+                    {
+                        foreach (var adjustment in adjustments)
+                        {
+                            if (adjustment.Kind == ExceptionAdjustmentKind.Removal &&
+                                adjustment.Accessor == throwHelperAccessor &&
+                                adjustment.ExceptionTypeId == exceptionTypeId)
+                            {
+                                result = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!result)
+                    {
+                        foreach (var adjustment in adjustments)
+                        {
+                            if (adjustment.Kind == ExceptionAdjustmentKind.Addition &&
+                                adjustment.Accessor == throwHelperAccessor &&
+                                adjustment.ExceptionTypeId == exceptionTypeId)
+                            {
+                                result = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                return result;
+
+                static bool IsThrowHelperName(string name)
+                {
+                    const string throwHelperName = "Throw";
+
+                    if (name.Length >= 5 && name.StartsWith(throwHelperName, StringComparison.Ordinal))
+                    {
+                        if (name.Length == 5)
+                            return true;
+                        char c = name[throwHelperName.Length];
+                        return c < 'a' || c > 'z';
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
             }
 
             /// <summary>
