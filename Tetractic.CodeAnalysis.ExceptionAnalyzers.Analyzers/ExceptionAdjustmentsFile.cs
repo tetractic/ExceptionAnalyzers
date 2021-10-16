@@ -9,8 +9,10 @@
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -39,7 +41,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             var diagnosticsBuilder = ImmutableArray.CreateBuilder<Diagnostic>();
 
-            var symbolsEntries = new Dictionary<string, List<MemberExceptionAdjustment>>();
+            var mutableBuilder = new Dictionary<string, List<MemberExceptionAdjustment>>();
 
             foreach (var textLine in text.Lines)
             {
@@ -51,103 +53,24 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 if (line[0] == '#')
                     continue;
 
-                int symbolIdStart = 0;
-                int symbolIdEnd = line.IndexOf(' ');
-                if (symbolIdEnd == -1)
-                {
-                    var span = new TextSpan(textLine.Span.End, 0);
-                    AddDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedSpaceRule, span);
+                string? symbolId;
+                MemberExceptionAdjustment adjustment;
+                if (!ParseAdjustment(line, textLine.Span, ReportDiagnostic, out symbolId, out adjustment))
                     continue;
-                }
-                if (symbolIdEnd == symbolIdStart)
+
+                List<MemberExceptionAdjustment> adjustments;
+                if (!mutableBuilder.TryGetValue(symbolId, out adjustments))
                 {
-                    var span = new TextSpan(textLine.Span.Start + symbolIdStart, 0);
-                    AddDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedIdentifierRule, span);
-                    continue;
+                    adjustments = new List<MemberExceptionAdjustment>();
+                    mutableBuilder.Add(symbolId, adjustments);
                 }
-
-                int adjustmentIndex = symbolIdEnd + 1;
-                if (adjustmentIndex == line.Length)
-                {
-                    var span = new TextSpan(textLine.Span.End, 0);
-                    AddDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedOperatorRule, span);
-                    continue;
-                }
-
-                ExceptionAdjustmentKind adjustmentKind;
-                switch (line[adjustmentIndex])
-                {
-                    case '-':
-                        adjustmentKind = ExceptionAdjustmentKind.Removal;
-                        break;
-                    case '+':
-                        adjustmentKind = ExceptionAdjustmentKind.Addition;
-                        break;
-                    default:
-                        var span = new TextSpan(textLine.Span.Start + adjustmentIndex, 1);
-                        AddDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedOperatorRule, span);
-                        continue;
-                }
-
-                int accessorStart = adjustmentIndex + 1;
-                int accessorEnd = line.IndexOf(' ', accessorStart);
-                if (accessorEnd == -1)
-                {
-                    var span = new TextSpan(textLine.Span.End, 0);
-                    AddDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedSpaceRule, span);
-                    continue;
-                }
-
-                int exceptionTypeIdStart = accessorEnd + 1;
-                int exceptionTypeIdEnd = line.Length;
-                if (exceptionTypeIdEnd == exceptionTypeIdStart)
-                {
-                    var span = new TextSpan(textLine.Span.Start + exceptionTypeIdStart, 0);
-                    AddDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedIdentifierRule, span);
-                    continue;
-                }
-
-                var symbolIdSpan = new TextSpan(textLine.Span.Start + symbolIdStart, symbolIdEnd - symbolIdStart);
-                var symbolIdLineSpan = text.Lines.GetLinePositionSpan(symbolIdSpan);
-                string symbolId = line.Substring(symbolIdStart, symbolIdEnd - symbolIdStart);
-
-                var accessorSpan = new TextSpan(textLine.Span.Start + accessorStart, accessorEnd - accessorStart);
-                var accessorLineSpan = text.Lines.GetLinePositionSpan(accessorSpan);
-                string? accessor = accessorSpan.IsEmpty ? null : line.Substring(accessorStart, accessorEnd - accessorStart);
-
-                var exceptionTypeIdSpan = new TextSpan(textLine.Span.Start + exceptionTypeIdStart, exceptionTypeIdEnd - exceptionTypeIdStart);
-                var exceptionTypeIdLineSpan = text.Lines.GetLinePositionSpan(exceptionTypeIdSpan);
-                string exceptionTypeId = line.Substring(exceptionTypeIdStart, exceptionTypeIdEnd - exceptionTypeIdStart);
-
-                var entry = new MemberExceptionAdjustment(
-                    accessor: accessor,
-                    kind: adjustmentKind,
-                    exceptionTypeId: exceptionTypeId,
-                    symbolIdSpan: symbolIdSpan,
-                    symbolIdLineSpan: symbolIdLineSpan,
-                    accessorSpan: accessorSpan,
-                    accessorLineSpan: accessorLineSpan,
-                    exceptionTypeIdSpan: exceptionTypeIdSpan,
-                    exceptionTypeIdLineSpan: exceptionTypeIdLineSpan);
-
-                List<MemberExceptionAdjustment> symbolEntries;
-                if (!symbolsEntries.TryGetValue(symbolId, out symbolEntries))
-                {
-                    symbolEntries = new List<MemberExceptionAdjustment>();
-                    symbolsEntries.Add(symbolId, symbolEntries);
-                }
-                symbolEntries.Add(entry);
+                adjustments.Add(adjustment);
             }
 
             var builder = ImmutableDictionary.CreateBuilder<string, ImmutableArray<MemberExceptionAdjustment>>();
 
-            foreach (var symbolsEntry in symbolsEntries)
-            {
-                string symbolId = symbolsEntry.Key;
-                var entries = symbolsEntry.Value.ToImmutableArray();
-
-                builder.Add(symbolId, entries);
-            }
+            foreach (var entry in mutableBuilder)
+                builder.Add(entry.Key, entry.Value.ToImmutableArray());
 
             var memberAdjustments = builder.ToImmutable();
 
@@ -155,13 +78,95 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             return new ExceptionAdjustmentsFile(memberAdjustments, diagnostics);
 
-            void AddDiagnostic(DiagnosticDescriptor descriptor, TextSpan span)
+            void ReportDiagnostic(DiagnosticDescriptor descriptor, TextSpan span)
             {
                 var linePositionSpan = text.Lines.GetLinePositionSpan(span);
                 diagnosticsBuilder.Add(Diagnostic.Create(
                     descriptor: descriptor,
                     location: filePath is null ? Location.None : Location.Create(filePath, span, linePositionSpan)));
             }
+        }
+
+        public static bool ParseAdjustment(string line, TextSpan lineSpan, Action<DiagnosticDescriptor, TextSpan> reportDiagnostic, [NotNullWhen(true)] out string? symbolId, out MemberExceptionAdjustment adjustment)
+        {
+            int symbolIdStart = 0;
+            int symbolIdEnd = line.IndexOf(' ');
+            if (symbolIdEnd == -1)
+            {
+                var span = new TextSpan(lineSpan.End, 0);
+                reportDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedSpaceRule, span);
+                goto fail;
+            }
+            if (symbolIdEnd == symbolIdStart)
+            {
+                var span = new TextSpan(lineSpan.Start + symbolIdStart, 0);
+                reportDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedIdentifierRule, span);
+                goto fail;
+            }
+
+            int adjustmentIndex = symbolIdEnd + 1;
+            if (adjustmentIndex == line.Length)
+            {
+                var span = new TextSpan(lineSpan.End, 0);
+                reportDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedOperatorRule, span);
+                goto fail;
+            }
+
+            ExceptionAdjustmentKind adjustmentKind;
+            switch (line[adjustmentIndex])
+            {
+                case '-':
+                    adjustmentKind = ExceptionAdjustmentKind.Removal;
+                    break;
+                case '+':
+                    adjustmentKind = ExceptionAdjustmentKind.Addition;
+                    break;
+                default:
+                    var span = new TextSpan(lineSpan.Start + adjustmentIndex, 1);
+                    reportDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedOperatorRule, span);
+                    goto fail;
+            }
+
+            int accessorStart = adjustmentIndex + 1;
+            int accessorEnd = line.IndexOf(' ', accessorStart);
+            if (accessorEnd == -1)
+            {
+                var span = new TextSpan(lineSpan.End, 0);
+                reportDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedSpaceRule, span);
+                goto fail;
+            }
+
+            int exceptionTypeIdStart = accessorEnd + 1;
+            int exceptionTypeIdEnd = line.Length;
+            if (exceptionTypeIdEnd == exceptionTypeIdStart)
+            {
+                var span = new TextSpan(lineSpan.Start + exceptionTypeIdStart, 0);
+                reportDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedIdentifierRule, span);
+                goto fail;
+            }
+
+            var symbolIdSpan = new TextSpan(lineSpan.Start + symbolIdStart, symbolIdEnd - symbolIdStart);
+            symbolId = line.Substring(symbolIdStart, symbolIdEnd - symbolIdStart);
+
+            var accessorSpan = new TextSpan(lineSpan.Start + accessorStart, accessorEnd - accessorStart);
+            string? accessor = accessorSpan.IsEmpty ? null : line.Substring(accessorStart, accessorEnd - accessorStart);
+
+            var exceptionTypeIdSpan = new TextSpan(lineSpan.Start + exceptionTypeIdStart, exceptionTypeIdEnd - exceptionTypeIdStart);
+            string exceptionTypeId = line.Substring(exceptionTypeIdStart, exceptionTypeIdEnd - exceptionTypeIdStart);
+
+            adjustment = new MemberExceptionAdjustment(
+                accessor: accessor,
+                kind: adjustmentKind,
+                exceptionTypeId: exceptionTypeId,
+                symbolIdSpan: symbolIdSpan,
+                accessorSpan: accessorSpan,
+                exceptionTypeIdSpan: exceptionTypeIdSpan);
+            return true;
+
+        fail:
+            symbolId = default;
+            adjustment = default;
+            return false;
         }
     }
 }

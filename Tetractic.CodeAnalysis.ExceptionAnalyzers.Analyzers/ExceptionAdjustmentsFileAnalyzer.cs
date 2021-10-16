@@ -9,6 +9,7 @@
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
 using System.IO;
 
@@ -89,6 +90,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     foreach (var diagnostic in adjustmentsFile.Diagnostics)
                         compilationContext.ReportDiagnostic(diagnostic);
 
+                    SourceText? text = null;
+
                     foreach (var adjustments in adjustmentsFile.MemberAdjustments)
                     {
                         var symbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustments.Key, compilation);
@@ -96,15 +99,27 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         foreach (var adjustment in adjustments.Value)
                         {
                             if (symbol is null)
+                            {
+                                text ??= additionalFile.GetText(cancellationToken);
+
+                                var symbolIdLineSpan = text.Lines.GetLinePositionSpan(adjustment.SymbolIdSpan);
+
                                 compilationContext.ReportDiagnostic(Diagnostic.Create(
                                     descriptor: SymbolRule,
-                                    location: Location.Create(additionalFile.Path, adjustment.SymbolIdSpan, adjustment.SymbolIdLineSpan)));
+                                    location: Location.Create(additionalFile.Path, adjustment.SymbolIdSpan, symbolIdLineSpan)));
+                            }
 
                             var exceptionType = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, compilation);
                             if (exceptionType is null)
+                            {
+                                text ??= additionalFile.GetText(cancellationToken);
+
+                                var exceptionTypeIdLineSpan = text.Lines.GetLinePositionSpan(adjustment.ExceptionTypeIdSpan);
+
                                 compilationContext.ReportDiagnostic(Diagnostic.Create(
                                     descriptor: SymbolRule,
-                                    location: Location.Create(additionalFile.Path, adjustment.ExceptionTypeIdSpan, adjustment.ExceptionTypeIdLineSpan)));
+                                    location: Location.Create(additionalFile.Path, adjustment.ExceptionTypeIdSpan, exceptionTypeIdLineSpan)));
+                            }
                         }
                     }
                 }
