@@ -497,6 +497,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 HandleThrownExceptionTypes(span, throwerSymbol, throwerAccessorKinds, thrownExceptionTypes);
             }
 
+            /// <summary>
+            /// Handle exception types thrown by a specified accessors of a symbol, given an array
+            /// of documented exception types for that symbol.
+            /// </summary>
             protected void HandleThrownExceptionTypes(TextSpan span, ISymbol throwerSymbol, AccessorKinds throwerAccessorKinds, ImmutableArray<DocumentedExceptionType> thrownExceptionTypes)
             {
                 var enumerator = throwerAccessorKinds.GetEnumerator();
@@ -525,13 +529,22 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 }
             }
 
+            /// <summary>
+            /// Indicates whether an uncaught exception type should be ignored.
+            /// </summary>
             protected abstract bool IsIgnoredExceptionType(INamedTypeSymbol exceptionType);
 
+            /// <summary>
+            /// Handles a specified uncaught exception type.
+            /// </summary>
             protected virtual void HandleUncaughtExceptionType(TextSpan span, ISymbol? throwerSymbol, AccessorKind throwerAccessorKind, INamedTypeSymbol exceptionType)
             {
                 HandleUncaughtExceptionTypes(span, throwerSymbol, throwerAccessorKind, ImmutableArray.Create(exceptionType));
             }
 
+            /// <summary>
+            /// Handles specified uncaught exception types.
+            /// </summary>
             protected abstract void HandleUncaughtExceptionTypes(TextSpan span, ISymbol? throwerSymbol, AccessorKind throwerAccessorKind, ImmutableArray<INamedTypeSymbol> exceptionTypes);
 
             protected ImmutableArray<DocumentedExceptionType> GetThrownExceptionTypes(ISymbol symbol)
@@ -657,9 +670,13 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 return complete;
             }
 
-            // Returns true if the type of `symbol` must be one of the types added to `types` in
-            // order to satisfy `expression` (and thus the type of `symbol` can be treated as more
-            // refined than its declared type).
+            /// <summary>
+            /// Adds the types from logical-ORed <c>is</c> expressions on <paramref name="symbol"/>.
+            /// Returns <see langword="true"/> if the type of <paramref name="symbol"/> must be one
+            /// of the types added to <paramref name="types"/> in order to satisfy
+            /// <paramref name="expression"/> (and thus the type of <paramref name="symbol"/> can be
+            /// treated as more refined than its declared type).
+            /// </summary>
             private bool AddTypesFromIsExpressions(INamedTypeSymbol catchType, ISymbol symbol, ExpressionSyntax expression, ExceptionTypesBuilder types)
             {
                 bool complete = true;
@@ -705,7 +722,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 return false;
             }
 
-            // Perform simple evaluation of logical-OR expressions.
+            /// <summary>
+            /// Performs simple evaluation of logical-OR expressions.
+            /// </summary>
             private bool EvaluatesToTrue(ExpressionSyntax expression)
             {
                 while (expression.Kind() == SyntaxKind.ParenthesizedExpression)
@@ -753,6 +772,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 HandleThrownExceptionTypes(node.Span, symbol, node);
             }
 
+            /// <summary>
+            /// Handles exception types thrown by a specified symbol.  The accessors of the symbol
+            /// are determined by the context of the node being visited in the syntax tree.
+            /// </summary>
             private void HandleThrownExceptionTypes(TextSpan span, ISymbol symbol, ExpressionSyntax? node)
             {
                 AccessorKinds accessorKinds;
@@ -833,6 +856,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 HandleThrownExceptionTypes(span, symbol, accessorKinds);
             }
 
+            /// <summary>
+            /// Indicates whether an exception type is ignored/caught.  If the exception type is
+            /// caught by a general catch clause, the type is added to the list of exception types
+            /// caught by that clause.
+            /// </summary>
             private bool TryIgnoreOrAddCaughtExceptionType(INamedTypeSymbol exceptionType, INamedTypeSymbol originalExceptionType)
             {
                 if (originalExceptionType.HasBaseConversionTo(Context.IgnoredExceptionTypes))
