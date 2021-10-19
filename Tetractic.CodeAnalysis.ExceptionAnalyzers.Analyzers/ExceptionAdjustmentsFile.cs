@@ -55,7 +55,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 string? symbolId;
                 MemberExceptionAdjustment adjustment;
-                if (!ParseAdjustment(line, textLine.Span, ReportDiagnostic, out symbolId, out adjustment))
+                if (!TryParseAdjustment(line, textLine.Span, ReportDiagnostic, out symbolId, out adjustment))
                     continue;
 
                 List<MemberExceptionAdjustment> adjustments;
@@ -87,8 +87,15 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
-        public static bool ParseAdjustment(string line, TextSpan lineSpan, Action<DiagnosticDescriptor, TextSpan> reportDiagnostic, [NotNullWhen(true)] out string? symbolId, out MemberExceptionAdjustment adjustment)
+        public static bool TryParseAdjustment(string line, TextSpan lineSpan, Action<DiagnosticDescriptor, TextSpan> reportDiagnostic, [NotNullWhen(true)] out string? symbolId, out MemberExceptionAdjustment adjustment)
         {
+            if (line.Length == 0)
+            {
+                var span = new TextSpan(lineSpan.Start, 0);
+                reportDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedIdentifierRule, span);
+                goto fail;
+            }
+
             int symbolIdStart = 0;
             int symbolIdEnd = line.IndexOf(' ');
             if (symbolIdEnd == -1)
@@ -104,7 +111,15 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 goto fail;
             }
 
-            int adjustmentIndex = symbolIdEnd + 1;
+            int accessorStart = symbolIdEnd + 1;
+            int accessorEnd = line.IndexOf(' ', accessorStart);
+            if (accessorEnd == -1)
+            {
+                accessorStart = symbolIdEnd;
+                accessorEnd = accessorStart;
+            }
+
+            int adjustmentIndex = accessorEnd + 1;
             if (adjustmentIndex == line.Length)
             {
                 var span = new TextSpan(lineSpan.End, 0);
@@ -127,16 +142,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     goto fail;
             }
 
-            int accessorStart = adjustmentIndex + 1;
-            int accessorEnd = line.IndexOf(' ', accessorStart);
-            if (accessorEnd == -1)
-            {
-                var span = new TextSpan(lineSpan.End, 0);
-                reportDiagnostic(ExceptionAdjustmentsFileAnalyzer.ExpectedSpaceRule, span);
-                goto fail;
-            }
-
-            int exceptionTypeIdStart = accessorEnd + 1;
+            int exceptionTypeIdStart = adjustmentIndex + 1;
             int exceptionTypeIdEnd = line.Length;
             if (exceptionTypeIdEnd == exceptionTypeIdStart)
             {

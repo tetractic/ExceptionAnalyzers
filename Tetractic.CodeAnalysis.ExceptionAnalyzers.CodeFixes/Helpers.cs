@@ -14,6 +14,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -210,12 +211,16 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private static string GetRemovalAdjustmentLine(string memberId, string? accessor, string exceptionTypeId)
         {
-            return $"{memberId} -{accessor} {exceptionTypeId}";
+            return accessor != null
+                ? $"{memberId} {accessor} -{exceptionTypeId}"
+                : $"{memberId} -{exceptionTypeId}";
         }
 
         private static string GetAdditionAdjustmentLine(string memberId, string? accessor, string exceptionTypeId)
         {
-            return $"{memberId} +{accessor} {exceptionTypeId}";
+            return accessor != null
+                ? $"{memberId} {accessor} +{exceptionTypeId}"
+                : $"{memberId} +{exceptionTypeId}";
         }
 
         private static async Task<Project> TryRemoveAdjustmentLines(Project project, string line, CancellationToken cancellationToken)
@@ -274,31 +279,33 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private static SourceText AddAdjustmentLine(SourceText text, string line, string endOfLine)
         {
-            int symbolEnd = line.Length < 2 ? -1 : line.IndexOf(' ', 2);
-
             int position = text.Length;
-
-            bool allEmpty = true;
-            for (int i = text.Lines.Count; i > 0; --i)
+            string? symbolId;
+            MemberExceptionAdjustment adjustment;
+            if (TryParseAdjustment(line, out symbolId, out adjustment))
             {
-                var textLine = text.Lines[i - 1];
-                if (textLine.Span.IsEmpty)
+                bool allEmpty = true;
+                for (int i = text.Lines.Count; i > 0; --i)
                 {
-                    if (allEmpty)
+                    var textLine = text.Lines[i - 1];
+                    if (textLine.Span.IsEmpty)
                     {
-                        position = textLine.Span.Start;
-                        continue;
+                        if (allEmpty)
+                        {
+                            position = textLine.Span.Start;
+                            continue;
+                        }
+                        break;
                     }
-                    break;
+                    else
+                    {
+                        allEmpty = false;
+                    }
+                    string existingLine = textLine.ToString();
+                    if (ShouldInsertAfter(existingLine, symbolId, adjustment))
+                        break;
+                    position = textLine.Span.Start;
                 }
-                else
-                {
-                    allEmpty = false;
-                }
-                string existingLine = textLine.ToString();
-                if (ShouldInsertAfter(existingLine, line, symbolEnd))
-                    break;
-                position = textLine.Span.Start;
             }
 
             // If inserting after last line, ensure it ends with a line break.
@@ -315,39 +322,44 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             return text.Replace(new TextSpan(position, 0), line + endOfLine);
 
-            static bool ShouldInsertAfter(string existingLine, string line, int symbolEnd)
+            static bool ShouldInsertAfter(string existingLine, string symbolId, MemberExceptionAdjustment adjustment)
             {
-                if (symbolEnd < 0)
+                if (existingLine.Length < 1 || existingLine[0] == '#')
                     return true;
 
-                if (existingLine.Length < 2 || existingLine[0] == '#' || existingLine[1] != ':')
+                if (!TryParseAdjustment(existingLine, out string? existingSymbolId, out MemberExceptionAdjustment existingAdjustment))
                     return true;
 
                 // Compare symbol identifier (excluding kind prefix).
-                int end = Math.Min(existingLine.Length, symbolEnd);
-                int result = CompareSubstring(existingLine, line, 2, end);
+                int end = Math.Min(existingSymbolId.Length, symbolId.Length);
+                int result = CompareSubstring(existingSymbolId, symbolId, 2, end);
+                if (result != 0)
+                    return result < 0;
+                result = existingSymbolId.Length.CompareTo(symbolId.Length);
                 if (result != 0)
                     return result < 0;
 
                 // Compare presence of accessor.  Absence comes before presence.
-                if (symbolEnd >= existingLine.Length - 2 || symbolEnd >= line.Length - 2)
-                    return true;
-                bool existingLineHasAccessor = existingLine[symbolEnd + 2] != ' ';
-                bool lineHasAccessor = line[symbolEnd + 2] != ' ';
-                if (existingLineHasAccessor != lineHasAccessor)
-                    return lineHasAccessor;
+                bool existingHasAccessor = existingAdjustment.Accessor != null;
+                bool hasAccessor = adjustment.Accessor != null;
+                if (existingHasAccessor != hasAccessor)
+                    return hasAccessor;
 
                 // Compare operator.  '-' comes before '+'.
-                result = existingLine[symbolEnd + 1] - line[symbolEnd + 1];
-                if (result != 0)
-                    return result > 0;
-
-                // Compare the accessor and exception type identifier.
-                end = Math.Min(existingLine.Length, line.Length);
-                result = CompareSubstring(existingLine, line, symbolEnd + 2, end);
+                result = existingAdjustment.Kind.CompareTo(adjustment.Kind);
                 if (result != 0)
                     return result < 0;
-                return existingLine.Length < line.Length;
+
+                // Compare accessor, if present.
+                if (existingHasAccessor)
+                {
+                    result = string.CompareOrdinal(existingAdjustment.Accessor, adjustment.Accessor);
+                    if (result != 0)
+                        return result < 0;
+                }
+
+                // Compare exception type identifier.
+                return string.CompareOrdinal(existingAdjustment.ExceptionTypeId, adjustment.ExceptionTypeId) < 0;
             }
 
             static int CompareSubstring(string left, string right, int start, int end)
@@ -360,6 +372,16 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         return cLeft - cRight;
                 }
                 return 0;
+            }
+        }
+
+        private static bool TryParseAdjustment(string line, [NotNullWhen(true)] out string? symbolId, out MemberExceptionAdjustment adjustment)
+        {
+            return ExceptionAdjustmentsFile.TryParseAdjustment(line, TextSpan.FromBounds(0, line.Length), ReportDiagnostic, out symbolId, out adjustment);
+
+            static void ReportDiagnostic(DiagnosticDescriptor descriptor, TextSpan span)
+            {
+                // Ignore.
             }
         }
     }
