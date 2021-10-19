@@ -187,7 +187,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.OriginalDefinition.GetDocumentationCommentId()));
 
-                string? accessor = DocumentedExceptionTypesProvider.GetAccessorName(_accessorKind);
+                string? accessor = DocumentedExceptionType.GetAccessorName(_accessorKind);
 
                 var builder = ImmutableDictionary.CreateBuilder<string, string>();
 
@@ -202,7 +202,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     string throwerMemberId = throwerSymbol.OriginalDefinition.GetDocumentationCommentId();
                     if (throwerMemberId != null)
                     {
-                        string? throwerAccessor = DocumentedExceptionTypesProvider.GetAccessorName(throwerAccessorKind);
+                        string? throwerAccessor = DocumentedExceptionType.GetAccessorName(throwerAccessorKind);
 
                         builder.Add(PropertyKeys.ThrowerMemberId, throwerMemberId);
                         if (throwerAccessor != null)

@@ -66,6 +66,44 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
+        public static void ApplyAdjustments(DocumentedExceptionTypesBuilder exceptionTypesBuilder, ImmutableArray<MemberExceptionAdjustment> symbolAdjustments, ISymbol symbol, Compilation compilation)
+        {
+            ApplyAdjustments(exceptionTypesBuilder, symbolAdjustments, symbol, unspecifiedAccessor: true, compilation);
+
+            ApplyAdjustments(exceptionTypesBuilder, symbolAdjustments, symbol, unspecifiedAccessor: false, compilation);
+
+            static void ApplyAdjustments(DocumentedExceptionTypesBuilder builder, ImmutableArray<MemberExceptionAdjustment> symbolAdjustments, ISymbol symbol, bool unspecifiedAccessor, Compilation compilation)
+            {
+                foreach (var adjustment in symbolAdjustments)
+                {
+                    if ((adjustment.Accessor == null) != unspecifiedAccessor)
+                        continue;
+                    if (adjustment.Kind != ExceptionAdjustmentKind.Removal)
+                        continue;
+                    if (!DocumentedExceptionType.TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
+                        continue;
+
+                    var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, compilation);
+                    if (exceptionTypeSymbol is INamedTypeSymbol exceptionType)
+                        builder.Remove(symbol, exceptionType, accessorKind);
+                }
+
+                foreach (var adjustment in symbolAdjustments)
+                {
+                    if ((adjustment.Accessor == null) != unspecifiedAccessor)
+                        continue;
+                    if (adjustment.Kind != ExceptionAdjustmentKind.Addition)
+                        continue;
+                    if (!DocumentedExceptionType.TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
+                        continue;
+
+                    var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, compilation);
+                    if (exceptionTypeSymbol is INamedTypeSymbol exceptionType)
+                        builder.Add(symbol, exceptionType, accessorKind);
+                }
+            }
+        }
+
         private static ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> GetGlobalAdjustments()
         {
             using (var stream = typeof(ExceptionAdjustments).Assembly.GetManifestResourceStream("Tetractic.CodeAnalysis.ExceptionAnalyzers.GlobalExceptionAdjustments.txt"))

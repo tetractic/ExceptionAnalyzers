@@ -54,118 +54,6 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return TryGetDocumentedExceptionTypes(symbol, out exceptionTypes, ref symbolStack, cancellationToken);
         }
 
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="accessorKind"/> is not
-        ///     defined.</exception>
-        internal static string? GetAccessorName(AccessorKind accessorKind)
-        {
-            return accessorKind switch
-            {
-                AccessorKind.Unspecified => null,
-                AccessorKind.Get => "get",
-                AccessorKind.Set => "set",
-                AccessorKind.Add => "add",
-                AccessorKind.Remove => "remove",
-                _ => throw new ArgumentOutOfRangeException(nameof(accessorKind)),
-            };
-        }
-
-        private static bool TryGetAccessorKind(string? accessor, out AccessorKind accessorKind)
-        {
-            switch (accessor)
-            {
-                case null:
-                    accessorKind = AccessorKind.Unspecified;
-                    return true;
-                case "get":
-                    accessorKind = AccessorKind.Get;
-                    return true;
-                case "set":
-                    accessorKind = AccessorKind.Set;
-                    return true;
-                case "add":
-                    accessorKind = AccessorKind.Add;
-                    return true;
-                case "remove":
-                    accessorKind = AccessorKind.Remove;
-                    return true;
-                default:
-                    accessorKind = default;
-                    return false;
-            }
-        }
-
-        private static void AddExceptionType(DocumentedExceptionTypesBuilder builder, ISymbol symbol, INamedTypeSymbol exceptionType, AccessorKind accessorKind)
-        {
-            switch (symbol.Kind)
-            {
-                case SymbolKind.Event:
-                    if (accessorKind == AccessorKind.Unspecified)
-                    {
-                        var eventSymbol = (IEventSymbol)symbol;
-                        if (eventSymbol.AddMethod != null)
-                            builder.Add(exceptionType, AccessorKind.Add);
-                        if (eventSymbol.RemoveMethod != null)
-                            builder.Add(exceptionType, AccessorKind.Remove);
-                        break;
-                    }
-
-                    goto default;
-
-                case SymbolKind.Property:
-                    if (accessorKind == AccessorKind.Unspecified)
-                    {
-                        var propertySymbol = (IPropertySymbol)symbol;
-                        if (propertySymbol.GetMethod != null)
-                            builder.Add(exceptionType, AccessorKind.Get);
-                        if (propertySymbol.SetMethod != null)
-                            builder.Add(exceptionType, AccessorKind.Set);
-                        break;
-                    }
-
-                    goto default;
-
-                default:
-                    builder.Add(exceptionType, accessorKind);
-                    break;
-            }
-        }
-
-        private static void RemoveExceptionType(DocumentedExceptionTypesBuilder builder, ISymbol symbol, INamedTypeSymbol exceptionType, AccessorKind accessorKind)
-        {
-            switch (symbol.Kind)
-            {
-                case SymbolKind.Event:
-                    if (accessorKind == AccessorKind.Unspecified)
-                    {
-                        var eventSymbol = (IEventSymbol)symbol;
-                        if (eventSymbol.AddMethod != null)
-                            _ = builder.Remove(exceptionType, AccessorKind.Add);
-                        if (eventSymbol.RemoveMethod != null)
-                            _ = builder.Remove(exceptionType, AccessorKind.Remove);
-                        break;
-                    }
-
-                    goto default;
-
-                case SymbolKind.Property:
-                    if (accessorKind == AccessorKind.Unspecified)
-                    {
-                        var propertySymbol = (IPropertySymbol)symbol;
-                        if (propertySymbol.GetMethod != null)
-                            _ = builder.Remove(exceptionType, AccessorKind.Get);
-                        if (propertySymbol.SetMethod != null)
-                            _ = builder.Remove(exceptionType, AccessorKind.Set);
-                        break;
-                    }
-
-                    goto default;
-
-                default:
-                    _ = builder.Remove(exceptionType, accessorKind);
-                    break;
-            }
-        }
-
         private static bool XmlEquals(string left, string right)
         {
             return string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
@@ -501,7 +389,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             _ = symbol;
 
-            if (!TryGetAccessorKind(accessor, out var accessorKind))
+            if (!DocumentedExceptionType.TryGetAccessorKind(accessor, out var accessorKind))
                 return;
 
             if (cref != null || crefSymbol != null)
@@ -509,7 +397,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 if (cref != null)
                     crefSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(cref, Compilation);
                 if (crefSymbol is INamedTypeSymbol exceptionType)
-                    AddExceptionType(builder, symbol, exceptionType, accessorKind);
+                    builder.Add(symbol, exceptionType, accessorKind);
             }
         }
 
@@ -598,40 +486,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             if (builder == null)
                 builder = DocumentedExceptionTypesBuilder.Allocate();
 
-            ApplyAdjustments(symbol, builder, symbolAdjustments, unspecifiedAccessor: true);
-
-            ApplyAdjustments(symbol, builder, symbolAdjustments, unspecifiedAccessor: false);
-
-            void ApplyAdjustments(ISymbol symbol, DocumentedExceptionTypesBuilder builder, ImmutableArray<MemberExceptionAdjustment> symbolAdjustments, bool unspecifiedAccessor)
-            {
-                foreach (var adjustment in symbolAdjustments)
-                {
-                    if ((adjustment.Accessor == null) != unspecifiedAccessor)
-                        continue;
-                    if (adjustment.Kind != ExceptionAdjustmentKind.Removal)
-                        continue;
-                    if (!TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
-                        continue;
-
-                    var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, Compilation);
-                    if (exceptionTypeSymbol is INamedTypeSymbol exceptionType)
-                        RemoveExceptionType(builder, symbol, exceptionType, accessorKind);
-                }
-
-                foreach (var adjustment in symbolAdjustments)
-                {
-                    if ((adjustment.Accessor == null) != unspecifiedAccessor)
-                        continue;
-                    if (adjustment.Kind != ExceptionAdjustmentKind.Addition)
-                        continue;
-                    if (!TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
-                        continue;
-
-                    var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, Compilation);
-                    if (exceptionTypeSymbol is INamedTypeSymbol exceptionType)
-                        AddExceptionType(builder, symbol, exceptionType, accessorKind);
-                }
-            }
+            ExceptionAdjustments.ApplyAdjustments(builder, symbolAdjustments, symbol, Compilation);
         }
 
         private ImmutableArray<DocumentedExceptionType> GetAdjustmentAddedDocumentedExceptionTypes(ISymbol symbol)
@@ -649,7 +504,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 if (adjustment.Kind != ExceptionAdjustmentKind.Addition)
                     continue;
-                if (!TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
+                if (!DocumentedExceptionType.TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
                     continue;
 
                 var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, Compilation);

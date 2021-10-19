@@ -191,7 +191,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.OriginalDefinition.GetDocumentationCommentId()));
 
-            string? accessor = DocumentedExceptionTypesProvider.GetAccessorName(accessorKind);
+            string? accessor = DocumentedExceptionType.GetAccessorName(accessorKind);
 
             var builder = ImmutableDictionary.CreateBuilder<string, string>();
 

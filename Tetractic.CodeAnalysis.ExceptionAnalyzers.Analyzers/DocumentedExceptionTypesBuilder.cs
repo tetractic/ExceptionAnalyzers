@@ -71,6 +71,42 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             _count += 1;
         }
 
+        public void Add(ISymbol symbol, INamedTypeSymbol exceptionType, AccessorKind accessorKind)
+        {
+            switch (symbol.Kind)
+            {
+                case SymbolKind.Event:
+                    if (accessorKind == AccessorKind.Unspecified)
+                    {
+                        var eventSymbol = (IEventSymbol)symbol;
+                        if (eventSymbol.AddMethod != null)
+                            Add(exceptionType, AccessorKind.Add);
+                        if (eventSymbol.RemoveMethod != null)
+                            Add(exceptionType, AccessorKind.Remove);
+                        break;
+                    }
+
+                    goto default;
+
+                case SymbolKind.Property:
+                    if (accessorKind == AccessorKind.Unspecified)
+                    {
+                        var propertySymbol = (IPropertySymbol)symbol;
+                        if (propertySymbol.GetMethod != null)
+                            Add(exceptionType, AccessorKind.Get);
+                        if (propertySymbol.SetMethod != null)
+                            Add(exceptionType, AccessorKind.Set);
+                        break;
+                    }
+
+                    goto default;
+
+                default:
+                    Add(exceptionType, accessorKind);
+                    break;
+            }
+        }
+
         public bool Remove(INamedTypeSymbol exceptionType, AccessorKind accessorKind)
         {
             for (int i = 0; i < _count; ++i)
@@ -86,6 +122,42 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
 
             return false;
+        }
+
+        public void Remove(ISymbol symbol, INamedTypeSymbol exceptionType, AccessorKind accessorKind)
+        {
+            switch (symbol.Kind)
+            {
+                case SymbolKind.Event:
+                    if (accessorKind == AccessorKind.Unspecified)
+                    {
+                        var eventSymbol = (IEventSymbol)symbol;
+                        if (eventSymbol.AddMethod != null)
+                            _ = Remove(exceptionType, AccessorKind.Add);
+                        if (eventSymbol.RemoveMethod != null)
+                            _ = Remove(exceptionType, AccessorKind.Remove);
+                        break;
+                    }
+
+                    goto default;
+
+                case SymbolKind.Property:
+                    if (accessorKind == AccessorKind.Unspecified)
+                    {
+                        var propertySymbol = (IPropertySymbol)symbol;
+                        if (propertySymbol.GetMethod != null)
+                            _ = Remove(exceptionType, AccessorKind.Get);
+                        if (propertySymbol.SetMethod != null)
+                            _ = Remove(exceptionType, AccessorKind.Set);
+                        break;
+                    }
+
+                    goto default;
+
+                default:
+                    _ = Remove(exceptionType, accessorKind);
+                    break;
+            }
         }
 
         public void Clear()

@@ -8,6 +8,7 @@
 // names, trademarks, or service marks.
 
 using Microsoft.CodeAnalysis;
+using System;
 using System.Collections.Immutable;
 
 namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
@@ -44,6 +45,46 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
 
             return false;
+        }
+
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="accessorKind"/> is not
+        ///     defined.</exception>
+        public static string? GetAccessorName(AccessorKind accessorKind)
+        {
+            return accessorKind switch
+            {
+                AccessorKind.Unspecified => null,
+                AccessorKind.Get => "get",
+                AccessorKind.Set => "set",
+                AccessorKind.Add => "add",
+                AccessorKind.Remove => "remove",
+                _ => throw new ArgumentOutOfRangeException(nameof(accessorKind)),
+            };
+        }
+
+        public static bool TryGetAccessorKind(string? accessor, out AccessorKind accessorKind)
+        {
+            switch (accessor)
+            {
+                case null:
+                    accessorKind = AccessorKind.Unspecified;
+                    return true;
+                case "get":
+                    accessorKind = AccessorKind.Get;
+                    return true;
+                case "set":
+                    accessorKind = AccessorKind.Set;
+                    return true;
+                case "add":
+                    accessorKind = AccessorKind.Add;
+                    return true;
+                case "remove":
+                    accessorKind = AccessorKind.Remove;
+                    return true;
+                default:
+                    accessorKind = default;
+                    return false;
+            }
         }
     }
 }
