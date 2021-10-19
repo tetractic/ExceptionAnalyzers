@@ -30,6 +30,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             // Accessor to report is diagnostic and to use in filtering documented exception types.
             private AccessorKind _accessorKind;
 
+            private ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> _localAdjustments = null!;
+
             public MemberVisitor(SemanticModelAnalysisContext semanticModelContext, Context context)
                 : base(semanticModelContext, context)
             {
@@ -41,7 +43,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 var bodySyntax = (SyntaxNode)baseMethodSyntax.Body ?? baseMethodSyntax.ExpressionBody;
 
-                Analyze(symbol, AccessorKind.Unspecified, bodySyntax);
+                Analyze(symbol, AccessorKind.Unspecified, baseMethodSyntax, bodySyntax);
             }
 
             public void Analyze(BasePropertyDeclarationSyntax basePropertySyntax)
@@ -55,14 +57,14 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     {
                         var propertySyntax = (PropertyDeclarationSyntax)basePropertySyntax;
                         if (propertySyntax.ExpressionBody != null)
-                            Analyze(symbol, AccessorKind.Get, propertySyntax.ExpressionBody);
+                            Analyze(symbol, AccessorKind.Get, propertySyntax, propertySyntax.ExpressionBody);
                         break;
                     }
                     case SyntaxKind.IndexerDeclaration:
                     {
                         var indexerSyntax = (IndexerDeclarationSyntax)basePropertySyntax;
                         if (indexerSyntax.ExpressionBody != null)
-                            Analyze(symbol, AccessorKind.Get, indexerSyntax.ExpressionBody);
+                            Analyze(symbol, AccessorKind.Get, indexerSyntax, indexerSyntax.ExpressionBody);
                         break;
                     }
                 }
@@ -83,7 +85,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                         var bodySyntax = (SyntaxNode?)accessorSyntax.Body ?? accessorSyntax.ExpressionBody;
 
-                        Analyze(symbol, accessorKind, bodySyntax);
+                        Analyze(symbol, accessorKind, basePropertySyntax, bodySyntax);
                     }
                 }
             }
@@ -94,7 +96,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 if (constructorSyntax.Initializer != null)
                 {
-                    Analyze(symbol, AccessorKind.Unspecified, constructorSyntax.Initializer);
+                    Analyze(symbol, AccessorKind.Unspecified, constructorSyntax, constructorSyntax.Initializer);
                 }
                 else
                 {
@@ -108,6 +110,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             _accessorKind = AccessorKind.Unspecified;
                             _documentedExceptionTypes = GetDocumentedExceptionTypes(symbol);
 
+                            _localAdjustments = GetAdjustmentsFromComments(constructorSyntax);
+
                             var span = constructorSyntax.Identifier.Span;
                             HandleThrownExceptionTypes(span, baseConstructor, AccessorKinds.Unspecified);
                         }
@@ -116,7 +120,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 var bodySyntax = (SyntaxNode)constructorSyntax.Body ?? constructorSyntax.ExpressionBody;
 
-                Analyze(symbol, AccessorKind.Unspecified, bodySyntax);
+                Analyze(symbol, AccessorKind.Unspecified, constructorSyntax, bodySyntax);
             }
 
             protected override void HandleDelegateCreation(TextSpan span, IMethodSymbol symbol, ITypeSymbol delegateType)
@@ -170,6 +174,15 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             messageArgs: new[] { delegateType.Name, symbol.Name, exceptionDisplayNames }));
                     }
                 }
+            }
+
+            protected override void HandleThrownExceptionTypes(TextSpan span, ISymbol throwerSymbol, AccessorKinds throwerAccessorKinds)
+            {
+                var thrownExceptionTypes = GetThrownExceptionTypes(throwerSymbol);
+
+                thrownExceptionTypes = ExceptionAdjustments.ApplyAdjustments(thrownExceptionTypes, _localAdjustments, throwerSymbol, Compilation);
+
+                HandleThrownExceptionTypes(span, throwerSymbol, throwerAccessorKinds, thrownExceptionTypes);
             }
 
             protected override bool IsIgnoredExceptionType(INamedTypeSymbol exceptionType)
@@ -258,7 +271,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 }
             }
 
-            private void Analyze(ISymbol symbol, AccessorKind accessorKind, SyntaxNode bodySyntax)
+            private void Analyze(ISymbol symbol, AccessorKind accessorKind, SyntaxNode declarationSyntax, SyntaxNode? bodySyntax)
             {
                 _symbol = symbol;
                 _documentedExceptionTypes = GetDocumentedExceptionTypes(symbol);
@@ -266,9 +279,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 for (; ; )
                 {
+                    _localAdjustments = GetAdjustmentsFromComments(declarationSyntax);
+
                     Visit(bodySyntax, Access.Get);
 
-                    if (!TryDequeDeferred(out _symbol!, out _accessorKind, out bodySyntax!))
+                    if (!TryDequeDeferred(out _symbol!, out _accessorKind, out declarationSyntax!, out bodySyntax!))
                         break;
 
                     _ = TryGetDocumentedExceptionTypes(_symbol, out _documentedExceptionTypes);

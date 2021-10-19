@@ -65,6 +65,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             AccessorRule,
             DelegateCreationRule,
             AnonymousDelegateCreationRule,
+            ExceptionAdjustmentsFileAnalyzer.SyntaxErrorRule,
+            ExceptionAdjustmentsFileAnalyzer.SymbolRule,
         });
 
         public override void Initialize(AnalysisContext context)

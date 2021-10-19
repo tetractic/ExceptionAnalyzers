@@ -24,6 +24,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
     internal static class Helpers
     {
+        private const string _exceptionAdjustmentPrefix = "// ExceptionAdjustment: ";
+
         private static readonly SymbolDisplayFormat _memberDisplayFormat = new SymbolDisplayFormat(
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             memberOptions: SymbolDisplayMemberOptions.IncludeParameters,
@@ -70,7 +72,88 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public static CodeAction GetAdditionAdjustmentCodeAction(Document document, string memberId, ISymbol? member, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
         {
-            var codeActions = exceptionTypeIdsAndTypes
+            var additionalFileActions = GetAdditionAdjustmentAdditionalFileActions(document, memberId, member, accessor, exceptionTypeIdsAndTypes);
+
+            return CodeAction.Create(
+                title: "Adjust documented exceptions",
+                nestedActions: additionalFileActions,
+                isInlinable: false);
+        }
+
+        public static CodeAction GetRemovalAdjustmentCodeAction(Document document, string memberId, ISymbol? member, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
+        {
+            var additionalFileActions = GetRemovalAdjustmentAdditionalFileActions(document, memberId, member, accessor, exceptionTypeIdsAndTypes);
+
+            return CodeAction.Create(
+                title: "Adjust documented exceptions",
+                nestedActions: additionalFileActions,
+                isInlinable: false);
+        }
+
+        public static CodeAction GetRemovalAdjustmentCodeAction(Document document, SyntaxNode declaration, string memberId, ISymbol? member, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
+        {
+            var additionalFileActions = GetRemovalAdjustmentAdditionalFileActions(document, memberId, member, accessor, exceptionTypeIdsAndTypes);
+
+            var codeActions = GetRemovalAdjustmentCodeActions(document, declaration, memberId, member, accessor, exceptionTypeIdsAndTypes);
+
+            return CodeAction.Create(
+                title: "Adjust documented exceptions",
+                nestedActions: ImmutableArray.Create(new[]
+                {
+                    CodeAction.Create(
+                        title: "Adjust in adjustments file",
+                        nestedActions: additionalFileActions,
+                        isInlinable: false),
+                    CodeAction.Create(
+                        title: "Adjust in code",
+                        nestedActions: codeActions,
+                        isInlinable: false),
+                }),
+                isInlinable: false);
+        }
+
+        private static string GetAdjustmentFileHeader(string endOfLine)
+        {
+            return @"# Due to [1], you may have to manually change the ""Build Action"" of this file to ""C# analyzer additional file""." + endOfLine +
+                   @"# [1] https://github.com/dotnet/roslyn/issues/4655" + endOfLine +
+                   @"" + endOfLine +
+                   @"# This file adjusts exception information used by Tetractic.CodeAnalysis.ExceptionAnalyzers." + endOfLine +
+                   @"# Usage: <memberId> {-|+}[<accessor>] <exceptionTypeId>" + endOfLine +
+                   @"# See ECMA-334, 5th Ed. § D.4.2 ""ID string format"" for a description of the ID format.";
+        }
+
+        private static string GetEndOfLine(SourceText text)
+        {
+            string endOfLine = Environment.NewLine;
+
+            if (text.Lines.Count > 0)
+            {
+                var firstLine = text.Lines[0];
+                var endOfLineSpan = TextSpan.FromBounds(firstLine.End, firstLine.EndIncludingLineBreak);
+                if (!endOfLineSpan.IsEmpty)
+                    endOfLine = text.ToString(endOfLineSpan);
+            }
+
+            return endOfLine;
+        }
+
+        private static string GetRemovalAdjustmentLine(string memberId, string? accessor, string exceptionTypeId)
+        {
+            return accessor != null
+                ? $"{memberId} {accessor} -{exceptionTypeId}"
+                : $"{memberId} -{exceptionTypeId}";
+        }
+
+        private static string GetAdditionAdjustmentLine(string memberId, string? accessor, string exceptionTypeId)
+        {
+            return accessor != null
+                ? $"{memberId} {accessor} +{exceptionTypeId}"
+                : $"{memberId} +{exceptionTypeId}";
+        }
+
+        private static ImmutableArray<CodeAction> GetAdditionAdjustmentAdditionalFileActions(Document document, string memberId, ISymbol? member, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
+        {
+            return exceptionTypeIdsAndTypes
                 .Select(x =>
                 {
                     string exceptionTypeId = x.ExceptionTypeId;
@@ -119,16 +202,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         });
                 })
                 .ToImmutableArray();
-
-            return CodeAction.Create(
-                title: "Adjust documented exceptions",
-                nestedActions: codeActions,
-                isInlinable: false);
         }
 
-        public static CodeAction GetRemovalAdjustmentCodeAction(Document document, string memberId, ISymbol? member, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
+        private static ImmutableArray<CodeAction> GetRemovalAdjustmentAdditionalFileActions(Document document, string memberId, ISymbol? member, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
         {
-            var codeActions = exceptionTypeIdsAndTypes
+            return exceptionTypeIdsAndTypes
                 .Select(x =>
                 {
                     string exceptionTypeId = x.ExceptionTypeId;
@@ -177,50 +255,6 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         });
                 })
                 .ToImmutableArray();
-
-            return CodeAction.Create(
-                title: "Adjust documented exceptions",
-                nestedActions: codeActions,
-                isInlinable: false);
-        }
-
-        private static string GetAdjustmentFileHeader(string endOfLine)
-        {
-            return @"# Due to [1], you may have to manually change the ""Build Action"" of this file to ""C# analyzer additional file""." + endOfLine +
-                   @"# [1] https://github.com/dotnet/roslyn/issues/4655" + endOfLine +
-                   @"" + endOfLine +
-                   @"# This file adjusts exception information used by Tetractic.CodeAnalysis.ExceptionAnalyzers." + endOfLine +
-                   @"# Usage: <memberId> {-|+}[<accessor>] <exceptionTypeId>" + endOfLine +
-                   @"# See ECMA-334, 5th Ed. § D.4.2 ""ID string format"" for a description of the ID format.";
-        }
-
-        private static string GetEndOfLine(SourceText text)
-        {
-            string endOfLine = Environment.NewLine;
-
-            if (text.Lines.Count > 0)
-            {
-                var firstLine = text.Lines[0];
-                var endOfLineSpan = TextSpan.FromBounds(firstLine.End, firstLine.EndIncludingLineBreak);
-                if (!endOfLineSpan.IsEmpty)
-                    endOfLine = text.ToString(endOfLineSpan);
-            }
-
-            return endOfLine;
-        }
-
-        private static string GetRemovalAdjustmentLine(string memberId, string? accessor, string exceptionTypeId)
-        {
-            return accessor != null
-                ? $"{memberId} {accessor} -{exceptionTypeId}"
-                : $"{memberId} -{exceptionTypeId}";
-        }
-
-        private static string GetAdditionAdjustmentLine(string memberId, string? accessor, string exceptionTypeId)
-        {
-            return accessor != null
-                ? $"{memberId} {accessor} +{exceptionTypeId}"
-                : $"{memberId} +{exceptionTypeId}";
         }
 
         private static async Task<Project> TryRemoveAdjustmentLines(Project project, string line, CancellationToken cancellationToken)
@@ -373,6 +407,104 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 }
                 return 0;
             }
+        }
+
+        private static ImmutableArray<CodeAction> GetRemovalAdjustmentCodeActions(Document document, SyntaxNode declaration, string memberId, ISymbol? member, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
+        {
+            return exceptionTypeIdsAndTypes
+                .Select(x =>
+                {
+                    string exceptionTypeId = x.ExceptionTypeId;
+                    var exceptionType = x.ExceptionType;
+
+                    string exceptionName = exceptionType != null
+                        ? exceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+                        : exceptionTypeId;
+
+                    string memberName = member != null
+                        ? member.ToDisplayString(_memberDisplayFormat)
+                        : memberId;
+
+                    return CodeAction.Create(
+                        title: accessor != null
+                            ? $"Remove '{exceptionName}' from '{memberName}' '{accessor}' accessor"
+                            : $"Remove '{exceptionName}' from '{memberName}'",
+                        createChangedDocument: async cancellationToken =>
+                        {
+                            // Try to remove an addition adjustment line.
+                            {
+                                string additionCommentLine = _exceptionAdjustmentPrefix + GetAdditionAdjustmentLine(memberId, accessor, exceptionTypeId);
+
+                                var newDocument = TryRemoveAdjustmentCommentLines(document, declaration, additionCommentLine, cancellationToken);
+                                if (newDocument != document)
+                                    return newDocument;
+                            }
+
+                            // Add a removal adjustment line.
+                            {
+                                string removalCommentLine = _exceptionAdjustmentPrefix + GetRemovalAdjustmentLine(memberId, accessor, exceptionTypeId);
+
+                                return TryAddAdjustmentCommentLine(document, declaration, removalCommentLine, cancellationToken);
+                            }
+                        });
+                })
+                .ToImmutableArray();
+        }
+
+        private static Document TryRemoveAdjustmentCommentLines(Document document, SyntaxNode declaration, string commentLine, CancellationToken cancellationToken)
+        {
+            var syntaxRoot = declaration.SyntaxTree.GetRoot(cancellationToken);
+
+            var leadingTrivia = declaration.GetLeadingTrivia();
+
+            var newLeadingTrivia = leadingTrivia;
+
+            for (int i = 0; i < newLeadingTrivia.Count; ++i)
+            {
+                var trivia = newLeadingTrivia[i];
+
+                if (trivia.Kind() == SyntaxKind.SingleLineCommentTrivia &&
+                    trivia.ToString() == commentLine)
+                {
+                    newLeadingTrivia = newLeadingTrivia.RemoveAt(i);
+
+                    if (i < newLeadingTrivia.Count &&
+                        newLeadingTrivia[i].Kind() == SyntaxKind.EndOfLineTrivia)
+                    {
+                        newLeadingTrivia = newLeadingTrivia.RemoveAt(i);
+
+                        if (i < newLeadingTrivia.Count &&
+                            newLeadingTrivia[i].Kind() == SyntaxKind.WhitespaceTrivia)
+                        {
+                            newLeadingTrivia = newLeadingTrivia.RemoveAt(i);
+                        }
+                    }
+                }
+            }
+
+            if (newLeadingTrivia == leadingTrivia)
+                return document;
+
+            var newDeclaration = declaration
+                .WithLeadingTrivia(newLeadingTrivia);
+
+            syntaxRoot = syntaxRoot.ReplaceNode(declaration, newDeclaration);
+
+            return document.WithSyntaxRoot(syntaxRoot);
+        }
+
+        private static Document TryAddAdjustmentCommentLine(Document document, SyntaxNode declaration, string commentLine, CancellationToken cancellationToken)
+        {
+            var syntaxRoot = declaration.SyntaxTree.GetRoot(cancellationToken);
+
+            var newDeclaration = declaration
+                .WithLeadingTrivia(declaration.GetLeadingTrivia()
+                    .Add(SyntaxFactory.Comment(commentLine))
+                    .Add(SyntaxFactory.ElasticEndOfLine("\n")));
+
+            syntaxRoot = syntaxRoot.ReplaceNode(declaration, newDeclaration);
+
+            return document.WithSyntaxRoot(syntaxRoot);
         }
 
         private static bool TryParseAdjustment(string line, [NotNullWhen(true)] out string? symbolId, out MemberExceptionAdjustment adjustment)

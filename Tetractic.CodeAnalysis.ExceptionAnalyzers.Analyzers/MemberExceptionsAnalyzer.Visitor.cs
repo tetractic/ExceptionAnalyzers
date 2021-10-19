@@ -42,7 +42,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             private FunctionVisitor? _functionVisitor;
 
-            private Queue<(ISymbol Symbol, AccessorKind AccessorKind, SyntaxNode BodySyntax)>? _deferred;
+            private Queue<(ISymbol Symbol, AccessorKind AccessorKind, SyntaxNode DeclarationSyntax, SyntaxNode? BodySyntax)>? _deferred;
 
             public Visitor(SemanticModelAnalysisContext semanticModelContext, Context context)
             {
@@ -60,7 +60,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             protected CancellationToken CancellationToken => SemanticModelContext.CancellationToken;
 
-            protected void Visit(SyntaxNode node, Access access)
+            protected void Visit(SyntaxNode? node, Access access)
             {
                 _accessScopes.Push(access);
                 try
@@ -221,7 +221,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 {
                     var bodySyntax = (SyntaxNode)node.Body ?? node.ExpressionBody;
 
-                    EnqueueDeferred(symbol, AccessorKind.Unspecified, bodySyntax);
+                    EnqueueDeferred(symbol, AccessorKind.Unspecified, node, bodySyntax);
                 }
 
                 // Do not analyze local function as part of the member body.
@@ -569,7 +569,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                             var bodySyntax = (SyntaxNode)localFunctionSyntax.Body ?? localFunctionSyntax.ExpressionBody;
 
-                            _functionVisitor.Analyze(methodSymbol, bodySyntax);
+                            _functionVisitor.Analyze(methodSymbol, localFunctionSyntax, bodySyntax);
                         }
 
                         thrownExceptionTypes = _functionVisitor.ThrownExceptionTypesBuilder.ToImmutable();
@@ -588,7 +588,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                             var bodySyntax = anonymousFunctionSyntax.Body;
 
-                            _functionVisitor.Analyze(methodSymbol, bodySyntax);
+                            _functionVisitor.Analyze(methodSymbol, anonymousFunctionSyntax, bodySyntax);
                         }
 
                         thrownExceptionTypes = _functionVisitor.ThrownExceptionTypesBuilder.ToImmutable();
@@ -611,26 +611,86 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 return Context.DocumentedExceptionTypesProvider.TryGetDocumentedExceptionTypes(symbol, out documentedExceptionTypes, CancellationToken);
             }
 
-            protected internal void EnqueueDeferred(ISymbol symbol, AccessorKind accessorKind, SyntaxNode bodySyntax)
+            protected internal void EnqueueDeferred(ISymbol symbol, AccessorKind accessorKind, SyntaxNode declarationSyntax, SyntaxNode? bodySyntax)
             {
                 if (_deferred is null)
-                    _deferred = new Queue<(ISymbol, AccessorKind, SyntaxNode)>();
+                    _deferred = new Queue<(ISymbol, AccessorKind, SyntaxNode, SyntaxNode?)>();
 
-                _deferred.Enqueue((symbol, accessorKind, bodySyntax));
+                _deferred.Enqueue((symbol, accessorKind, declarationSyntax, bodySyntax));
             }
 
-            protected bool TryDequeDeferred([NotNullWhen(true)] out ISymbol? symbol, out AccessorKind accessorKind, [NotNullWhen(true)] out SyntaxNode? bodySyntax)
+            protected bool TryDequeDeferred([NotNullWhen(true)] out ISymbol? symbol, out AccessorKind accessorKind, [NotNullWhen(true)] out SyntaxNode? declarationSyntax, out SyntaxNode? bodySyntax)
             {
                 if (_deferred is null || _deferred.Count == 0)
                 {
                     symbol = default;
                     accessorKind = default;
+                    declarationSyntax = default;
                     bodySyntax = default;
                     return false;
                 }
 
-                (symbol, accessorKind, bodySyntax) = _deferred.Dequeue();
+                (symbol, accessorKind, declarationSyntax, bodySyntax) = _deferred.Dequeue();
                 return true;
+            }
+
+            protected ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> GetAdjustmentsFromComments(SyntaxNode? node)
+            {
+                if (node == null)
+                    return ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>>.Empty;
+
+                var result = ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>>.Empty;
+
+                const string exceptionAdjustmentPrefix = "// ExceptionAdjustment: ";
+
+                var leadingTrivia = node.GetLeadingTrivia();
+
+                foreach (var trivia in leadingTrivia)
+                {
+                    if (trivia.Kind() == SyntaxKind.SingleLineCommentTrivia)
+                    {
+                        string line = trivia.ToString();
+                        if (line.StartsWith(exceptionAdjustmentPrefix, StringComparison.Ordinal))
+                        {
+                            line = line.Substring(exceptionAdjustmentPrefix.Length);
+                            var span = TextSpan.FromBounds(trivia.Span.Start + exceptionAdjustmentPrefix.Length, trivia.Span.End);
+
+                            if (ExceptionAdjustmentsFile.TryParseAdjustment(line, span, ReportDiagnostic, out string? symbolId, out var adjustment))
+                            {
+                                var symbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(symbolId, Compilation);
+                                if (symbol is null)
+                                {
+                                    SemanticModelContext.ReportDiagnostic(Diagnostic.Create(
+                                        descriptor: ExceptionAdjustmentsFileAnalyzer.SymbolRule,
+                                        location: Location.Create(node.SyntaxTree, adjustment.SymbolIdSpan)));
+                                }
+
+                                var exceptionType = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, Compilation);
+                                if (exceptionType is null)
+                                {
+                                    SemanticModelContext.ReportDiagnostic(Diagnostic.Create(
+                                        descriptor: ExceptionAdjustmentsFileAnalyzer.SymbolRule,
+                                        location: Location.Create(node.SyntaxTree, adjustment.ExceptionTypeIdSpan)));
+                                }
+
+                                ImmutableArray<MemberExceptionAdjustment> adjustments;
+                                adjustments = result.TryGetValue(symbolId, out adjustments)
+                                    ? adjustments.Add(adjustment)
+                                    : ImmutableArray.Create(adjustment);
+                                result = result.SetItem(symbolId, adjustments);
+                            }
+                        }
+                    }
+                }
+
+                return result;
+
+                void ReportDiagnostic(DiagnosticDescriptor descriptor, TextSpan span)
+                {
+                    SemanticModelContext.ReportDiagnostic(Diagnostic.Create(
+                        descriptor: descriptor,
+                        Location.Create(node.SyntaxTree, span)));
+                }
             }
 
             private bool TryGetCreatedDelegateType(ExpressionSyntax node, out ITypeSymbol delegateType)
@@ -757,7 +817,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                     var bodySyntax = node.Body;
 
-                    EnqueueDeferred(symbol, AccessorKind.Unspecified, bodySyntax);
+                    EnqueueDeferred(symbol, AccessorKind.Unspecified, node, bodySyntax);
 
                     if (TryGetCreatedDelegateType(node, out var delegateSymbol))
                         HandleDelegateCreation(span, (IMethodSymbol)symbol, delegateSymbol);

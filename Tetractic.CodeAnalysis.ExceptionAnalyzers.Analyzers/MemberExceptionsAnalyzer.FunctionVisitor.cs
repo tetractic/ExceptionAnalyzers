@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 
@@ -22,6 +23,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             private readonly SymbolStack _symbolStack = new SymbolStack();
 
+            private readonly Stack<ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>>> _localAdjustmentsStack = new Stack<ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>>>();
+
             public FunctionVisitor(SemanticModelAnalysisContext semanticModelContext, Context context)
                 : base(semanticModelContext, context)
             {
@@ -29,19 +32,27 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public DocumentedExceptionTypesBuilder ThrownExceptionTypesBuilder { get; } = new DocumentedExceptionTypesBuilder();
 
-            public void Analyze(IMethodSymbol symbol, SyntaxNode bodySyntax)
+            public void Analyze(IMethodSymbol symbol, SyntaxNode declarationSyntax, SyntaxNode? bodySyntax)
             {
                 _symbolStack.Push(symbol);
                 try
                 {
-                    Visit(bodySyntax, Access.Get);
+                    _localAdjustmentsStack.Push(GetAdjustmentsFromComments(declarationSyntax));
+                    try
+                    {
+                        Visit(bodySyntax, Access.Get);
+                    }
+                    finally
+                    {
+                        _ = _localAdjustmentsStack.Pop();
+                    }
                 }
                 finally
                 {
                     _ = _symbolStack.Pop();
                 }
 
-                Debug.Assert(!TryDequeDeferred(out _, out _, out _), "Local function visitor deferred analysis.");
+                Debug.Assert(!TryDequeDeferred(out _, out _, out _, out _), "Local function visitor deferred analysis.");
             }
 
             public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
@@ -63,18 +74,22 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
             }
 
-            protected override void HandleThrownExceptionTypes(TextSpan span, ISymbol symbol, AccessorKinds accessorKinds)
+            protected override void HandleThrownExceptionTypes(TextSpan span, ISymbol throwerSymbol, AccessorKinds throwerAccessorKinds)
             {
-                if (TryGetDocumentedExceptionTypes(symbol, out var documentedExceptionTypes))
+                if (TryGetDocumentedExceptionTypes(throwerSymbol, out var documentedExceptionTypes))
                 {
-                    HandleThrownExceptionTypes(span, symbol, accessorKinds, documentedExceptionTypes);
+                    var localAdjustments = _localAdjustmentsStack.Peek();
+
+                    documentedExceptionTypes = ExceptionAdjustments.ApplyAdjustments(documentedExceptionTypes, localAdjustments, throwerSymbol, Compilation);
+
+                    HandleThrownExceptionTypes(span, throwerSymbol, throwerAccessorKinds, documentedExceptionTypes);
                     return;
                 }
 
                 // Recursively analyze local function calls.
-                if (symbol.Kind == SymbolKind.Method)
+                if (throwerSymbol.Kind == SymbolKind.Method)
                 {
-                    var methodSymbol = (IMethodSymbol)symbol;
+                    var methodSymbol = (IMethodSymbol)throwerSymbol;
                     if (methodSymbol.MethodKind == MethodKind.LocalFunction)
                     {
                         // Prevent infinite recursion.
@@ -87,7 +102,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                             var bodySyntax = (SyntaxNode)localFunctionSyntax.Body ?? localFunctionSyntax.ExpressionBody;
 
-                            Analyze(methodSymbol, bodySyntax);
+                            Analyze(methodSymbol, localFunctionSyntax, bodySyntax);
                             return;
                         }
                     }

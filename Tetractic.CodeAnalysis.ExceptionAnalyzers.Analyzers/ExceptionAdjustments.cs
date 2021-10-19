@@ -66,6 +66,27 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
+        public static ImmutableArray<DocumentedExceptionType> ApplyAdjustments(ImmutableArray<DocumentedExceptionType> exceptionTypes, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments, ISymbol symbol, Compilation compilation)
+        {
+            string? symbolId = symbol.OriginalDefinition.GetDocumentationCommentId();
+
+            if (symbolId != null &&
+                adjustments.TryGetValue(symbolId, out var symbolAdjustments))
+            {
+                var builder = DocumentedExceptionTypesBuilder.Allocate();
+
+                foreach (var exceptionType in exceptionTypes)
+                    builder.Add(exceptionType);
+
+                ApplyAdjustments(builder, symbolAdjustments, symbol, compilation);
+
+                exceptionTypes = builder.ToImmutable();
+                builder.Free();
+            }
+
+            return exceptionTypes;
+        }
+
         public static void ApplyAdjustments(DocumentedExceptionTypesBuilder exceptionTypesBuilder, ImmutableArray<MemberExceptionAdjustment> symbolAdjustments, ISymbol symbol, Compilation compilation)
         {
             ApplyAdjustments(exceptionTypesBuilder, symbolAdjustments, symbol, unspecifiedAccessor: true, compilation);

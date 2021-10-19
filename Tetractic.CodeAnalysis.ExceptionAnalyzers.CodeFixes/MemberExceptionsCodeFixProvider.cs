@@ -112,7 +112,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         _ = diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.ThrowerAccessor, out throwerAccessor);
 
                         context.RegisterCodeFix(
-                            Helpers.GetRemovalAdjustmentCodeAction(document, throwerMemberId, throwerMember, throwerAccessor, exceptionTypeIdsAndTypes),
+                            Helpers.GetRemovalAdjustmentCodeAction(document, declaration, throwerMemberId, throwerMember, throwerAccessor, exceptionTypeIdsAndTypes),
                             diagnostic);
                     }
                 }
