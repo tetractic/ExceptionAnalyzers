@@ -199,7 +199,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             if (supertypeMember != null)
             {
-                string supertypeMemberId = supertypeMember.OriginalDefinition.GetDocumentationCommentId();
+                string? supertypeMemberId = supertypeMember.OriginalDefinition.GetDocumentationCommentId();
                 if (supertypeMemberId != null)
                 {
                     builder.Add(PropertyKeys.SupertypeMemberId, supertypeMemberId);

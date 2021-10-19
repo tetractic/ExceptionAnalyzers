@@ -199,7 +199,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 if (throwerSymbol != null)
                 {
-                    string throwerMemberId = throwerSymbol.OriginalDefinition.GetDocumentationCommentId();
+                    string? throwerMemberId = throwerSymbol.OriginalDefinition.GetDocumentationCommentId();
                     if (throwerMemberId != null)
                     {
                         string? throwerAccessor = DocumentedExceptionType.GetAccessorName(throwerAccessorKind);
