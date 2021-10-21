@@ -9,6 +9,7 @@
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
@@ -18,7 +19,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
     internal static class ExceptionAdjustments
     {
-        public const string FileName = "ExceptionAdjustments.txt";
+        public const string DefaultFileName = "ExceptionAdjustments.txt";
+
+        private const string _filenamePrefix = "ExceptionAdjustments";
+
+        private const string _filenameSuffix = ".txt";
 
         public static readonly ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> Global = GetGlobalAdjustments();
 
@@ -28,7 +33,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             foreach (var additionalFile in additionalFiles)
             {
-                if (Path.GetFileName(additionalFile.Path) != FileName)
+                if (!IsFileName(Path.GetFileName(additionalFile.Path)))
                     continue;
 
                 adjustmentFiles = adjustmentFiles.Add(ExceptionAdjustmentsFile.Load(additionalFile, cancellationToken));
@@ -64,6 +69,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 return builder.ToImmutable();
             }
+        }
+
+        public static bool IsFileName(string fileName)
+        {
+            return fileName.StartsWith(_filenamePrefix, StringComparison.Ordinal) && fileName.EndsWith(_filenameSuffix, StringComparison.Ordinal);
         }
 
         public static ImmutableArray<DocumentedExceptionType> ApplyAdjustments(ImmutableArray<DocumentedExceptionType> exceptionTypes, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments, ISymbol symbol, Compilation compilation)

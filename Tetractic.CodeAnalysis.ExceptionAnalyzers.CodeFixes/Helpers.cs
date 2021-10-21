@@ -197,7 +197,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                     @"" + endOfLine +
                                     additionLine + endOfLine);
 
-                                return document.Project.AddAdditionalDocument(ExceptionAdjustments.FileName, text).Project.Solution;
+                                return document.Project.AddAdditionalDocument(ExceptionAdjustments.DefaultFileName, text).Project.Solution;
                             }
                         });
                 })
@@ -250,7 +250,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                     @"" + endOfLine +
                                     removalLine + endOfLine);
 
-                                return document.Project.AddAdditionalDocument(ExceptionAdjustments.FileName, text).Project.Solution;
+                                return document.Project.AddAdditionalDocument(ExceptionAdjustments.DefaultFileName, text).Project.Solution;
                             }
                         });
                 })
@@ -263,25 +263,25 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             foreach (var additionalDocument in project.AdditionalDocuments)
             {
-                if (Path.GetFileName(additionalDocument.FilePath) == ExceptionAdjustments.FileName)
+                if (!ExceptionAdjustments.IsFileName(Path.GetFileName(additionalDocument.FilePath)))
+                    continue;
+
+                var text = await additionalDocument.GetTextAsync(cancellationToken).ConfigureAwait(false);
+                if (text == null)
+                    continue;
+
+                var textChanges = ImmutableArray<TextChange>.Empty;
+
+                for (int i = text.Lines.Count; i > 0; --i)
                 {
-                    var text = await additionalDocument.GetTextAsync(cancellationToken).ConfigureAwait(false);
-                    if (text == null)
-                        continue;
+                    var textLine = text.Lines[i - 1];
 
-                    var textChanges = ImmutableArray<TextChange>.Empty;
-
-                    for (int i = text.Lines.Count; i > 0; --i)
-                    {
-                        var textLine = text.Lines[i - 1];
-
-                        if (textLine.ToString() == line)
-                            textChanges = textChanges.Add(new TextChange(textLine.SpanIncludingLineBreak, string.Empty));
-                    }
-
-                    if (!textChanges.IsEmpty)
-                        solution = solution.WithAdditionalDocumentText(additionalDocument.Id, text.WithChanges(textChanges));
+                    if (textLine.ToString() == line)
+                        textChanges = textChanges.Add(new TextChange(textLine.SpanIncludingLineBreak, string.Empty));
                 }
+
+                if (!textChanges.IsEmpty)
+                    solution = solution.WithAdditionalDocumentText(additionalDocument.Id, text.WithChanges(textChanges));
             }
 
             return solution == project.Solution
@@ -293,7 +293,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             var adjustmentsDocument = project.AdditionalDocuments
                 .OrderBy(additionalDocument => additionalDocument.Folders.Count)
-                .FirstOrDefault(additionalDocument => Path.GetFileName(additionalDocument.FilePath) == ExceptionAdjustments.FileName);
+                .FirstOrDefault(additionalDocument => Path.GetFileName(additionalDocument.FilePath) == ExceptionAdjustments.DefaultFileName);
 
             if (adjustmentsDocument != null)
             {

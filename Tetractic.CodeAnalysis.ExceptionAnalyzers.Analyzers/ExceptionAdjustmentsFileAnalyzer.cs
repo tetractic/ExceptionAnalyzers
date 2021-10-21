@@ -82,7 +82,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 foreach (var additionalFile in additionalFiles)
                 {
-                    if (Path.GetFileName(additionalFile.Path) != ExceptionAdjustments.FileName)
+                    if (!ExceptionAdjustments.IsFileName(Path.GetFileName(additionalFile.Path)))
                         continue;
 
                     var adjustmentsFile = ExceptionAdjustmentsFile.Load(additionalFile, cancellationToken);
