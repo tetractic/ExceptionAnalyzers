@@ -118,7 +118,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                    @"# [1] https://github.com/dotnet/roslyn/issues/4655" + endOfLine +
                    @"" + endOfLine +
                    @"# This file adjusts exception information used by Tetractic.CodeAnalysis.ExceptionAnalyzers." + endOfLine +
-                   @"# Usage: <memberId> {-|+}[<accessor>] <exceptionTypeId>" + endOfLine +
+                   @"# Usage: <memberId>[ <accessor>] {-|+}<exceptionTypeId>" + endOfLine +
                    @"# See ECMA-334, 5th Ed. § D.4.2 ""ID string format"" for a description of the ID format.";
         }
 
