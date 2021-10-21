@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="Tetractic.CodeAnalysis.ExceptionAnalyzers.df71fe3f-0b60-4a3a-a534-da3b04f8a3a7" Version="1.2.0" Language="en-US" Publisher="Carl Reinke"/>
+    <Identity Id="Tetractic.CodeAnalysis.ExceptionAnalyzers.df71fe3f-0b60-4a3a-a534-da3b04f8a3a7" Version="1.2.1" Language="en-US" Publisher="Carl Reinke"/>
     <DisplayName>Exception Analyzers</DisplayName>
     <Description xml:space="preserve">Helps you check that exceptions are caught or documented in C#.</Description>
     <Icon>PackageIcon.png</Icon>
