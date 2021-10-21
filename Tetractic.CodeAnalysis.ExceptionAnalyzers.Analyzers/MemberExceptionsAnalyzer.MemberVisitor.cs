@@ -198,21 +198,21 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             protected override void HandleUncaughtExceptionTypes(TextSpan span, ISymbol? throwerSymbol, AccessorKind throwerAccessorKind, ImmutableArray<INamedTypeSymbol> exceptionTypes)
             {
-                string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.OriginalDefinition.GetDocumentationCommentId()));
+                string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.OriginalDefinition.GetDocumentationCommentId2()));
 
                 string? accessor = DocumentedExceptionType.GetAccessorName(_accessorKind);
 
-                var builder = ImmutableDictionary.CreateBuilder<string, string>();
+                var builder = ImmutableDictionary.CreateBuilder<string, string?>();
 
                 builder.Add(PropertyKeys.ExceptionTypeIds, exceptionTypeIds);
 
-                builder.Add(PropertyKeys.MemberId, _symbol.OriginalDefinition.GetDocumentationCommentId());
+                builder.Add(PropertyKeys.MemberId, _symbol.OriginalDefinition.GetDocumentationCommentId2());
                 if (accessor != null)
                     builder.Add(PropertyKeys.Accessor, accessor);
 
                 if (throwerSymbol != null)
                 {
-                    string? throwerMemberId = throwerSymbol.OriginalDefinition.GetDocumentationCommentId();
+                    string? throwerMemberId = throwerSymbol.OriginalDefinition.GetDocumentationCommentId2();
                     if (throwerMemberId != null)
                     {
                         string? throwerAccessor = DocumentedExceptionType.GetAccessorName(throwerAccessorKind);

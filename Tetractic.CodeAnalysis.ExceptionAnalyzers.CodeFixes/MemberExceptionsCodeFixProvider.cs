@@ -46,7 +46,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     .Select(x => (ExceptionTypeId: x, ExceptionType: DocumentationCommentId.GetFirstSymbolForDeclarationId(x, compilation)))
                     .ToArray();
 
-                string memberId = diagnostic.Properties[MemberExceptionsAnalyzer.PropertyKeys.MemberId];
+                string? memberId = diagnostic.Properties[MemberExceptionsAnalyzer.PropertyKeys.MemberId];
 
                 string? accessor;
                 _ = diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.Accessor, out accessor);

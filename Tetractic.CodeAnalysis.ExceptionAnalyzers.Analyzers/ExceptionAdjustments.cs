@@ -68,7 +68,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public static ImmutableArray<DocumentedExceptionType> ApplyAdjustments(ImmutableArray<DocumentedExceptionType> exceptionTypes, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments, ISymbol symbol, Compilation compilation)
         {
-            string? symbolId = symbol.OriginalDefinition.GetDocumentationCommentId();
+            string? symbolId = symbol.OriginalDefinition.GetDocumentationCommentId2();
 
             if (symbolId != null &&
                 adjustments.TryGetValue(symbolId, out var symbolAdjustments))

@@ -352,7 +352,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            string? symbolId = symbol.OriginalDefinition.GetDocumentationCommentId();
+            string? symbolId = symbol.OriginalDefinition.GetDocumentationCommentId2();
             if (symbolId == null)
                 return default;
 
@@ -476,7 +476,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private void AdjustDocumentedExceptionTypes(ISymbol symbol, [NotNullIfNotNull("builder")] ref DocumentedExceptionTypesBuilder? builder, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments)
         {
-            string? symbolId = symbol.OriginalDefinition.GetDocumentationCommentId();
+            string? symbolId = symbol.OriginalDefinition.GetDocumentationCommentId2();
             if (symbolId == null)
                 return;
 
@@ -491,7 +491,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private ImmutableArray<DocumentedExceptionType> GetAdjustmentAddedDocumentedExceptionTypes(ISymbol symbol)
         {
-            string? symbolId = symbol.OriginalDefinition.GetDocumentationCommentId();
+            string? symbolId = symbol.OriginalDefinition.GetDocumentationCommentId2();
             if (symbolId == null)
                 return default;
 

@@ -925,13 +925,13 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 if (symbol.Kind != SymbolKind.Method)
                     return false;
 
-                string? symbolId = symbol.GetDocumentationCommentId();
-                if (symbolId is null)
-                    return false;
-
-                string? exceptionTypeId = originalExceptionType.GetDocumentationCommentId();
-
                 bool result = IsThrowHelperName(symbol.Name);
+
+                string? symbolId = symbol.GetDocumentationCommentId2();
+                if (symbolId is null)
+                    return result;
+
+                string? exceptionTypeId = originalExceptionType.GetDocumentationCommentId2();
 
                 if (Context.DocumentedExceptionTypesProvider.Adjustments.TryGetValue(symbolId, out var adjustments))
                 {
