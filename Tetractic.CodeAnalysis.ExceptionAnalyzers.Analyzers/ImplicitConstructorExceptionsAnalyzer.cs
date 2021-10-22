@@ -114,15 +114,15 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private static void ReportDiagnostic(SymbolAnalysisContext symbolContext, Location location, INamedTypeSymbol symbol, IMethodSymbol throwerSymbol, ImmutableArray<INamedTypeSymbol> exceptionTypes)
         {
-            string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.OriginalDefinition.GetDocumentationCommentId2()));
+            string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.GetDeclarationDocumentationCommentId()));
 
             var builder = ImmutableDictionary.CreateBuilder<string, string?>();
 
             builder.Add(PropertyKeys.ExceptionTypeIds, exceptionTypeIds);
 
-            builder.Add(PropertyKeys.ClassId, symbol.OriginalDefinition.GetDocumentationCommentId2());
+            builder.Add(PropertyKeys.ClassId, symbol.GetDeclarationDocumentationCommentId());
 
-            builder.Add(PropertyKeys.ThrowerMemberId, throwerSymbol.OriginalDefinition.GetDocumentationCommentId2());
+            builder.Add(PropertyKeys.ThrowerMemberId, throwerSymbol.GetDeclarationDocumentationCommentId());
 
             var properties = builder.ToImmutable();
 

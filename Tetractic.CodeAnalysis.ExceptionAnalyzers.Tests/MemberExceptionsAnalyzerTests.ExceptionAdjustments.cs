@@ -767,5 +767,46 @@ class C
             };
             await VerifyCS.VerifyAnalyzerAsync(source, expected);
         }
+
+        [TestMethod]
+        public async Task AdjustExtensionMethod()
+        {
+            var source = @"
+using System;
+
+static class C1
+{
+    /// <exception cref=""NotSupportedException""/>
+    public static void M1(this C2 @this) => throw new NotSupportedException();
+
+    /// <exception cref=""NotSupportedException""/>
+    public static void M2(this C3<int> @this) => throw new NotSupportedException();
+
+    /// <exception cref=""NotSupportedException""/>
+    public static void M3<T>(this C3<T> @this) => throw new NotSupportedException();
+}
+
+class C2
+{
+}
+
+class C3<T>
+{
+}
+
+class C4
+{
+    // ExceptionAdjustment: M:C1.M1(C2) -T:System.NotSupportedException
+    public void M1() => new C2().M1();
+
+    // ExceptionAdjustment: M:C1.M2(C3{System.Int32}) -T:System.NotSupportedException
+    public void M2() => new C3<int>().M2();
+
+    // ExceptionAdjustment: M:C1.M3``1(C3{``0}) -T:System.NotSupportedException
+    public void M3() => new C3<int>().M3();
+}";
+
+            await VerifyCS.VerifyAnalyzerAsync(source);
+        }
     }
 }

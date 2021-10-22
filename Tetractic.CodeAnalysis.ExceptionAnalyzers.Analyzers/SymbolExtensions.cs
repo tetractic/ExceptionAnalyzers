@@ -28,17 +28,26 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return null;
         }
 
-        public static string? GetDocumentationCommentId2(this ISymbol symbol)
+        public static string? GetDeclarationDocumentationCommentId(this ISymbol symbol)
         {
-            return !IsLocalFunction(symbol)
-                ? symbol.GetDocumentationCommentId()
-                : null;
-
-            static bool IsLocalFunction(ISymbol symbol)
+            if (symbol.Kind == SymbolKind.Method)
             {
-                return symbol.Kind == SymbolKind.Method &&
-                       ((IMethodSymbol)symbol).MethodKind == MethodKind.LocalFunction;
+                var methodSymbol = (IMethodSymbol)symbol;
+
+                switch (methodSymbol.MethodKind)
+                {
+                    case MethodKind.ReducedExtension:
+                        symbol = methodSymbol.ReducedFrom;
+                        break;
+
+                    case MethodKind.LocalFunction:
+                        return null;
+                }
             }
+
+            symbol = symbol.OriginalDefinition;
+
+            return symbol.GetDocumentationCommentId();
         }
     }
 }

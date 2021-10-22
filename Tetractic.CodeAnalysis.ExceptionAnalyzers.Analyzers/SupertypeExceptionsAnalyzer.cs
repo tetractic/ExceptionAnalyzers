@@ -189,7 +189,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private static void ReportDiagnostic(SymbolAnalysisContext symbolContext, Location location, AccessorKind accessorKind, INamedTypeSymbol supertype, ISymbol supertypeMember, ImmutableArray<INamedTypeSymbol> exceptionTypes)
         {
-            string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.OriginalDefinition.GetDocumentationCommentId2()));
+            string exceptionTypeIds = string.Join(",", exceptionTypes.Select(x => x.GetDeclarationDocumentationCommentId()));
 
             string? accessor = DocumentedExceptionType.GetAccessorName(accessorKind);
 
@@ -199,7 +199,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             if (supertypeMember != null)
             {
-                string? supertypeMemberId = supertypeMember.OriginalDefinition.GetDocumentationCommentId2();
+                string? supertypeMemberId = supertypeMember.GetDeclarationDocumentationCommentId();
                 if (supertypeMemberId != null)
                 {
                     builder.Add(PropertyKeys.SupertypeMemberId, supertypeMemberId);

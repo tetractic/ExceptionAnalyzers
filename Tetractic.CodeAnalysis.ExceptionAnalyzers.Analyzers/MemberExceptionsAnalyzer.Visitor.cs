@@ -515,7 +515,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             continue;
 
                         var originalExceptionType = thrownExceptionType.ExceptionType.OriginalDefinition;
-                        if (!originalExceptionType.HasBaseConversionTo(Context.IntransitiveExceptionTypes) || IsThrowHelper(throwerSymbol, originalExceptionType))
+                        if (!originalExceptionType.HasBaseConversionTo(Context.IntransitiveExceptionTypes) || IsThrowHelper(throwerSymbol, thrownExceptionType.ExceptionType))
                             if (!TryIgnoreOrAddCaughtExceptionType(thrownExceptionType.ExceptionType, originalExceptionType))
                                 _builder.Add(thrownExceptionType.ExceptionType);
                     }
@@ -920,18 +920,18 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             /// <summary>
             /// Indicates whether a symbol is a throw helper.
             /// </summary>
-            private bool IsThrowHelper(ISymbol symbol, INamedTypeSymbol originalExceptionType)
+            private bool IsThrowHelper(ISymbol symbol, INamedTypeSymbol exceptionType)
             {
                 if (symbol.Kind != SymbolKind.Method)
                     return false;
 
                 bool result = IsThrowHelperName(symbol.Name);
 
-                string? symbolId = symbol.GetDocumentationCommentId2();
+                string? symbolId = symbol.GetDeclarationDocumentationCommentId();
                 if (symbolId is null)
                     return result;
 
-                string? exceptionTypeId = originalExceptionType.GetDocumentationCommentId2();
+                string? exceptionTypeId = exceptionType.GetDeclarationDocumentationCommentId();
 
                 if (Context.DocumentedExceptionTypesProvider.Adjustments.TryGetValue(symbolId, out var adjustments))
                 {
