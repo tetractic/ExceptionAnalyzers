@@ -71,7 +71,45 @@ Default value: `System.ArgumentException, System.IndexOutOfRangeException, Syste
 
 ### Exception Adjustments
 
-TODO
+An "exception adjustment" mechanism allows for tuning what exception types may be thrown by a particular member.  Adjustments can be made applicable to a whole project or to a single member.
+
+Project-wide adjustments are sourced from the "additional files" of a project that have a filename matching one of the following patterns:
+
+ * ExceptionAdjustments.txt
+ * ExceptionAdjustments.*.txt
+
+Create a text file and then add an "additional file" to the project file:
+
+```XML
+<ItemGroup>
+  <AdditionalFiles Include="ExceptionAdjustments.txt" />
+</ItemGroup>
+```
+
+Each line of an exception adjustments file is either empty, a comment (beginning with a `#`), or an adjustment.  Adjustment lines have the following syntax:
+
+```
+<memberId>[ <accessor>] (-/+)<exceptionTypeId>
+```
+
+ * `<memberId>` is the ID of the member to which the exception type is being added (because it should be considered to potentially throw that exception type) or removed (because it should not).
+ * `<accessor>` is the optional accessor of the member (ex. the `get` or `set` accessor of a property) to which the adjustment applies.  If the accessor is omitted, the adjustment is applied to all accessors.
+ * `-` or `+` indicates removal or addition of the exception type, respectively.
+ * `<exceptionTypeId>` is the ID of the exception type to add or remove.
+ * The details of the ID format are found in the [C# language specification](https://github.com/dotnet/csharplang/blob/main/spec/documentation-comments.md#id-string-format).
+
+Per-member adjustments are sourced from comments on the member:
+
+```C#
+// ExceptionAdjustment: M:System.Int32.ToString(System.String) -T:System.FormatException
+string Demo(int x) => x.ToString("X4");
+```
+
+Exception adjustments are applied in order according to the following rules (in order of precedence):
+
+ 1. Project-wide adjustments are applied before per-member adjustments.
+ 2. Adjustments that omit the accessor are applied before adjustments that specify it.
+ 3. Removal adjustments are applied before addition adjustments.
 
 ## Limitations
 
