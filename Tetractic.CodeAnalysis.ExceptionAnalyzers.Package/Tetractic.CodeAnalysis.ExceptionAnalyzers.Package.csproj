@@ -16,7 +16,7 @@
     <Description>Helps you check that exceptions are caught or documented in C#.</Description>
     <Copyright>2021 Carl Reinke</Copyright>
     <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/Tetractic/ExceptionAnalyzers</PackageProjectUrl>
     <PackageIcon>PackageIcon.png</PackageIcon>
     <RepositoryUrl>https://github.com/Tetractic/ExceptionAnalyzers</RepositoryUrl>
@@ -37,11 +37,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\LICENSE.GPL-3.txt">
+    <None Include="..\LICENSE.txt">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
-    <None Include="..\LICENSE.LGPL-3.txt">
+    <None Include="..\LICENSE.GPL-3.txt">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
