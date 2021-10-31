@@ -107,6 +107,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 foreach (var adjustment in symbolAdjustments)
                 {
+                    if (adjustment.Flag != null)
+                        continue;
                     if ((adjustment.Accessor == null) != unspecifiedAccessor)
                         continue;
                     if (adjustment.Kind != ExceptionAdjustmentKind.Removal)
@@ -121,6 +123,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 foreach (var adjustment in symbolAdjustments)
                 {
+                    if (adjustment.Flag != null)
+                        continue;
                     if ((adjustment.Accessor == null) != unspecifiedAccessor)
                         continue;
                     if (adjustment.Kind != ExceptionAdjustmentKind.Addition)

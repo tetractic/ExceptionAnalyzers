@@ -15,6 +15,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
     {
         public readonly string? Accessor;
 
+        public readonly string? Flag;
+
         public readonly ExceptionAdjustmentKind Kind;
 
         public readonly string ExceptionTypeId;
@@ -23,21 +25,27 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public readonly TextSpan AccessorSpan;
 
+        public readonly TextSpan FlagSpan;
+
         public readonly TextSpan ExceptionTypeIdSpan;
 
         public MemberExceptionAdjustment(
             string? accessor,
+            string? flag,
             ExceptionAdjustmentKind kind,
             string exceptionTypeId,
             TextSpan symbolIdSpan,
             TextSpan accessorSpan,
+            TextSpan flagSpan,
             TextSpan exceptionTypeIdSpan)
         {
             Kind = kind;
             ExceptionTypeId = exceptionTypeId;
             Accessor = accessor;
+            Flag = flag;
             SymbolIdSpan = symbolIdSpan;
             AccessorSpan = accessorSpan;
+            FlagSpan = flagSpan;
             ExceptionTypeIdSpan = exceptionTypeIdSpan;
         }
     }

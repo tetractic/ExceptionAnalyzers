@@ -373,6 +373,12 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 if (result != 0)
                     return result < 0;
 
+                // Compare presence of flag.  Absence comes before presence.
+                bool existingHasFlag = existingAdjustment.Flag != null;
+                bool hasFlag = adjustment.Flag != null;
+                if (existingHasFlag != hasFlag)
+                    return hasFlag;
+
                 // Compare presence of accessor.  Absence comes before presence.
                 bool existingHasAccessor = existingAdjustment.Accessor != null;
                 bool hasAccessor = adjustment.Accessor != null;
@@ -383,6 +389,14 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 result = existingAdjustment.Kind.CompareTo(adjustment.Kind);
                 if (result != 0)
                     return result < 0;
+
+                // Compare flag, if present.
+                if (existingHasFlag)
+                {
+                    result = string.CompareOrdinal(existingAdjustment.Flag, adjustment.Flag);
+                    if (result != 0)
+                        return result < 0;
+                }
 
                 // Compare accessor, if present.
                 if (existingHasAccessor)

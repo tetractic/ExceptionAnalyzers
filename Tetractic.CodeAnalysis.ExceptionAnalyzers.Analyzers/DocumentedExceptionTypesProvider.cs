@@ -502,6 +502,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             foreach (var adjustment in symbolAdjustments)
             {
+                if (adjustment.Flag != null)
+                    continue;
                 if (adjustment.Kind != ExceptionAdjustmentKind.Addition)
                     continue;
                 if (!DocumentedExceptionType.TryGetAccessorKind(adjustment.Accessor, out var accessorKind))

@@ -935,14 +935,15 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 if (Context.DocumentedExceptionTypesProvider.Adjustments.TryGetValue(symbolId, out var adjustments))
                 {
-                    const string throwHelperAccessor = "$throw";
+                    const string throwerFlag = "thrower";
 
                     if (result)
                     {
                         foreach (var adjustment in adjustments)
                         {
                             if (adjustment.Kind == ExceptionAdjustmentKind.Removal &&
-                                adjustment.Accessor == throwHelperAccessor &&
+                                adjustment.Accessor == null &&
+                                adjustment.Flag == throwerFlag &&
                                 adjustment.ExceptionTypeId == exceptionTypeId)
                             {
                                 result = false;
@@ -956,7 +957,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         foreach (var adjustment in adjustments)
                         {
                             if (adjustment.Kind == ExceptionAdjustmentKind.Addition &&
-                                adjustment.Accessor == throwHelperAccessor &&
+                                adjustment.Accessor == null &&
+                                adjustment.Flag == throwerFlag &&
                                 adjustment.ExceptionTypeId == exceptionTypeId)
                             {
                                 result = true;

@@ -44,10 +44,26 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
+        internal static readonly DiagnosticDescriptor ExpectedAccessorOrOperatorRule = new DiagnosticDescriptor(
+            id: SyntaxErrorDiagnosticId,
+            title: "Exception adjustments syntax error",
+            messageFormat: "Expected accessor or '-' or '+'.",
+            category: "Analysis",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
         internal static readonly DiagnosticDescriptor ExpectedOperatorRule = new DiagnosticDescriptor(
             id: SyntaxErrorDiagnosticId,
             title: "Exception adjustments syntax error",
-            messageFormat: "Expected operator.",
+            messageFormat: "Expected '-' or '+'.",
+            category: "Analysis",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
+        internal static readonly DiagnosticDescriptor ExpectedEolRule = new DiagnosticDescriptor(
+            id: SyntaxErrorDiagnosticId,
+            title: "Exception adjustments syntax error",
+            messageFormat: "Expected end-of-line.",
             category: "Analysis",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
