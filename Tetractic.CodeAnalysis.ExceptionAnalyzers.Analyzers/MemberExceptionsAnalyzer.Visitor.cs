@@ -927,13 +927,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 bool result = IsThrowHelperName(symbol.Name);
 
-                string? symbolId = symbol.GetDeclarationDocumentationCommentId();
-                if (symbolId is null)
-                    return result;
-
                 string? exceptionTypeId = exceptionType.GetDeclarationDocumentationCommentId();
 
-                if (Context.DocumentedExceptionTypesProvider.Adjustments.TryGetValue(symbolId, out var adjustments))
+                if (Context.DocumentedExceptionTypesProvider.TryGetExceptionAdjustments(symbol, out var adjustments, CancellationToken))
                 {
                     const string throwerFlag = "thrower";
 

@@ -139,17 +139,53 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
+        public static ImmutableArray<MemberExceptionAdjustment> ApplyAdjustments(ImmutableArray<MemberExceptionAdjustment> existingAdjustments, ImmutableArray<MemberExceptionAdjustment> newAdjustments)
+        {
+            var builder = ImmutableArray.CreateBuilder<MemberExceptionAdjustment>(existingAdjustments.Length + newAdjustments.Length);
+
+            foreach (var existingAdjustment in existingAdjustments)
+            {
+                bool keep = true;
+
+                foreach (var newAdjustment in newAdjustments)
+                {
+                    // Discard existing adjustment if new adjustment overrides it.
+                    if (((existingAdjustment.Kind == ExceptionAdjustmentKind.Addition &&
+                          newAdjustment.Kind == ExceptionAdjustmentKind.Removal) ||
+                         (existingAdjustment.Kind == ExceptionAdjustmentKind.Removal &&
+                          newAdjustment.Kind == ExceptionAdjustmentKind.Addition)) &&
+                        (newAdjustment.Accessor == null ||
+                         existingAdjustment.Accessor == newAdjustment.Accessor) &&
+                        existingAdjustment.Flag == newAdjustment.Flag &&
+                        existingAdjustment.ExceptionTypeId == newAdjustment.ExceptionTypeId)
+                    {
+                        keep = false;
+                        break;
+                    }
+                }
+
+                if (keep)
+                    builder.Add(existingAdjustment);
+            }
+
+            builder.AddRange(newAdjustments);
+
+            return builder.Count == builder.Capacity
+                ? builder.MoveToImmutable()
+                : builder.ToImmutable();
+        }
+
         private static ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> GetGlobalAdjustments()
         {
             using (var stream = typeof(ExceptionAdjustments).Assembly.GetManifestResourceStream("Tetractic.CodeAnalysis.ExceptionAnalyzers.GlobalExceptionAdjustments.txt"))
             {
                 var text = SourceText.From(stream);
 
-                var exceptionAdjustmentsFile = ExceptionAdjustmentsFile.Load(text);
+                var adjustmentsFile = ExceptionAdjustmentsFile.Load(text);
 
-                Debug.Assert(exceptionAdjustmentsFile.Diagnostics.IsEmpty);
+                Debug.Assert(adjustmentsFile.Diagnostics.IsEmpty);
 
-                return exceptionAdjustmentsFile.MemberAdjustments;
+                return adjustmentsFile.MemberAdjustments;
             }
         }
     }

@@ -28,6 +28,19 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return null;
         }
 
+        public static ISymbol GetDeclarationSymbol(this ISymbol symbol)
+        {
+            if (symbol.Kind == SymbolKind.Method)
+            {
+                var methodSymbol = (IMethodSymbol)symbol;
+
+                if (methodSymbol.MethodKind == MethodKind.ReducedExtension)
+                    symbol = methodSymbol.ReducedFrom;
+            }
+
+            return symbol.OriginalDefinition;
+        }
+
         public static string? GetDeclarationDocumentationCommentId(this ISymbol symbol)
         {
             if (symbol.Kind == SymbolKind.Method)

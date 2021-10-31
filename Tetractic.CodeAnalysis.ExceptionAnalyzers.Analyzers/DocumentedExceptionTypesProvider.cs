@@ -31,16 +31,18 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private readonly ConcurrentDictionary<ISymbol, ImmutableArray<DocumentedExceptionType>> _cache;
 
+        private readonly ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> _adjustments;
+
+        private ImmutableDictionary<ISymbol, AdjustmentsInfo>? _lazyAdjustmentsCache;
+
         public DocumentedExceptionTypesProvider(Compilation compilation, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments)
         {
             Compilation = compilation;
-            Adjustments = adjustments;
-            _cache = new ConcurrentDictionary<ISymbol, ImmutableArray<DocumentedExceptionType>>();
+            _adjustments = adjustments;
+            _cache = new ConcurrentDictionary<ISymbol, ImmutableArray<DocumentedExceptionType>>(SymbolEqualityComparer.Default);
         }
 
         public Compilation Compilation { get; }
-
-        public ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> Adjustments { get; }
 
         public ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypes(ISymbol symbol, CancellationToken cancellationToken)
         {
@@ -52,6 +54,19 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             SymbolStack? symbolStack = null;
             return TryGetDocumentedExceptionTypes(symbol, out exceptionTypes, ref symbolStack, cancellationToken);
+        }
+
+        public bool TryGetExceptionAdjustments(ISymbol symbol, out ImmutableArray<MemberExceptionAdjustment> adjustments, CancellationToken cancellationToken)
+        {
+            AdjustmentsInfo adustmentInfo;
+            if (TryGetExceptionAdjustments(symbol, out adustmentInfo, cancellationToken))
+            {
+                adjustments = adustmentInfo.Adjustments;
+                return true;
+            }
+
+            adjustments = default;
+            return false;
         }
 
         private static bool XmlEquals(string left, string right)
@@ -75,16 +90,36 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefault(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
-            symbol = symbol.OriginalDefinition;
+            symbol = symbol.GetDeclarationSymbol();
 
             if (!_cache.TryGetValue(symbol, out var result))
             {
-                var exceptionTypes = SymbolEqualityComparer.Default.Equals(symbol.ContainingAssembly, Compilation.Assembly)
-                    ? GetDocumentedExceptionTypesOrDefaultFromSyntax(symbol, ref symbolStack, cancellationToken)
-                    : GetDocumentedExceptionTypesOrDefaultFromSymbol(symbol, ref symbolStack, cancellationToken);
+                var builder = SymbolEqualityComparer.Default.Equals(symbol.ContainingAssembly, Compilation.Assembly)
+                    ? GetDocumentedExceptionTypesFromSyntax(symbol, ref symbolStack, cancellationToken)
+                    : GetDocumentedExceptionTypesFromSymbol(symbol, ref symbolStack, cancellationToken);
 
-                if (exceptionTypes.IsDefault)
-                    exceptionTypes = GetAdjustmentAddedDocumentedExceptionTypes(symbol);
+                // A symbol is considered to be documented if documentation is missing but there are
+                // exception adjustments on that symbol in the compilation.
+                AdjustmentsInfo adjustmentInfo;
+                if (TryGetExceptionAdjustments(symbol, out adjustmentInfo, cancellationToken) &&
+                    !(builder == null && adjustmentInfo.HasCompilationAdjustments))
+                {
+                    if (builder == null)
+                        builder = DocumentedExceptionTypesBuilder.Allocate();
+
+                    ExceptionAdjustments.ApplyAdjustments(builder, adjustmentInfo.Adjustments, symbol, Compilation);
+                }
+
+                ImmutableArray<DocumentedExceptionType> exceptionTypes;
+                if (builder != null)
+                {
+                    exceptionTypes = builder.ToImmutable();
+                    builder.Free();
+                }
+                else
+                {
+                    exceptionTypes = default;
+                }
 
                 result = _cache.GetOrAdd(symbol, exceptionTypes);
             }
@@ -92,7 +127,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return result;
         }
 
-        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefaultFromSyntax(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
+        private DocumentedExceptionTypesBuilder? GetDocumentedExceptionTypesFromSyntax(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
             DocumentedExceptionTypesBuilder? builder = null;
 
@@ -232,17 +267,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 }
             }
 
-            AdjustDocumentedExceptionTypes(symbol, ref builder);
-
-            if (builder != null)
-            {
-                var exceptionTypes = builder.ToImmutable();
-                builder.Free();
-
-                return exceptionTypes;
-            }
-
-            return default;
+            return builder;
 
             static string GetValueText(SyntaxTokenList textTokens)
             {
@@ -261,11 +286,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
-        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefaultFromSymbol(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
+        private DocumentedExceptionTypesBuilder? GetDocumentedExceptionTypesFromSymbol(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
             string documentationCommentXml = symbol.GetDocumentationCommentXml(cancellationToken: cancellationToken);
             if (string.IsNullOrEmpty(documentationCommentXml))
-                return GetDocumentedExceptionTypesOrDefaultFromXmlFile(symbol, ref symbolStack, cancellationToken);
+                return GetDocumentedExceptionTypesFromXmlFile(symbol, ref symbolStack, cancellationToken);
 
             var builder = DocumentedExceptionTypesBuilder.Allocate();
 
@@ -340,34 +365,29 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 // Nothing to do.
             }
 
-            AdjustDocumentedExceptionTypes(symbol, ref builder);
-
-            var exceptionTypes = builder.ToImmutable();
-            builder.Free();
-
-            return exceptionTypes;
+            return builder;
         }
 
-        private ImmutableArray<DocumentedExceptionType> GetDocumentedExceptionTypesOrDefaultFromXmlFile(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
+        private DocumentedExceptionTypesBuilder? GetDocumentedExceptionTypesFromXmlFile(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             string? symbolId = symbol.GetDeclarationDocumentationCommentId();
             if (symbolId == null)
-                return default;
+                return null;
 
             var assembly = symbol.ContainingAssembly;
 
             var metadataReference = Compilation.GetMetadataReference(assembly);
             if (!(metadataReference is PortableExecutableReference peReference))
-                return default;
+                return null;
 
             var memberInfos = DocumentationXmlFileCache.GetMemberInfos(peReference);
             if (memberInfos == null)
-                return default;
+                return null;
 
             if (!memberInfos.TryGetValue(symbolId, out var memberInfo))
-                return default;
+                return null;
 
             var builder = DocumentedExceptionTypesBuilder.Allocate();
 
@@ -377,12 +397,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             foreach (string cref in memberInfo.InheritDocCrefs)
                 HandleInheritDocTag(symbol, builder, cref, null, ref symbolStack, cancellationToken);
 
-            AdjustDocumentedExceptionTypes(symbol, ref builder);
-
-            var exceptionTypes = builder.ToImmutable();
-            builder.Free();
-
-            return exceptionTypes;
+            return builder;
         }
 
         private void HandleExceptionTag(ISymbol symbol, DocumentedExceptionTypesBuilder builder, string? cref, ISymbol? crefSymbol, string? accessor)
@@ -468,56 +483,59 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
-        private void AdjustDocumentedExceptionTypes(ISymbol symbol, [NotNullIfNotNull("builder")] ref DocumentedExceptionTypesBuilder? builder)
+        private bool TryGetExceptionAdjustments(ISymbol symbol, out AdjustmentsInfo adjustmentInfo, CancellationToken cancellationToken)
         {
-            AdjustDocumentedExceptionTypes(symbol, ref builder, ExceptionAdjustments.Global);
-            AdjustDocumentedExceptionTypes(symbol, ref builder, Adjustments);
-        }
+            symbol = symbol.GetDeclarationSymbol();
 
-        private void AdjustDocumentedExceptionTypes(ISymbol symbol, [NotNullIfNotNull("builder")] ref DocumentedExceptionTypesBuilder? builder, ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> adjustments)
-        {
-            string? symbolId = symbol.GetDeclarationDocumentationCommentId();
-            if (symbolId == null)
-                return;
-
-            if (!adjustments.TryGetValue(symbolId, out var symbolAdjustments))
-                return;
-
-            if (builder == null)
-                builder = DocumentedExceptionTypesBuilder.Allocate();
-
-            ExceptionAdjustments.ApplyAdjustments(builder, symbolAdjustments, symbol, Compilation);
-        }
-
-        private ImmutableArray<DocumentedExceptionType> GetAdjustmentAddedDocumentedExceptionTypes(ISymbol symbol)
-        {
-            string? symbolId = symbol.GetDeclarationDocumentationCommentId();
-            if (symbolId == null)
-                return default;
-
-            if (!Adjustments.TryGetValue(symbolId, out var symbolAdjustments))
-                return default;
-
-            var builder = DocumentedExceptionTypesBuilder.Allocate();
-
-            foreach (var adjustment in symbolAdjustments)
+            if (_lazyAdjustmentsCache == null)
             {
-                if (adjustment.Flag != null)
-                    continue;
-                if (adjustment.Kind != ExceptionAdjustmentKind.Addition)
-                    continue;
-                if (!DocumentedExceptionType.TryGetAccessorKind(adjustment.Accessor, out var accessorKind))
-                    continue;
+                var builder = ImmutableDictionary.CreateBuilder<ISymbol, AdjustmentsInfo>(SymbolEqualityComparer.Default);
 
-                var exceptionTypeSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(adjustment.ExceptionTypeId, Compilation);
-                if (exceptionTypeSymbol is INamedTypeSymbol exceptionType)
-                    builder.Add(exceptionType, accessorKind);
+                foreach (var entry in ExceptionAdjustments.Global)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    string entrySymbolId = entry.Key;
+
+                    foreach (var entrySymbol in DocumentationCommentId.GetSymbolsForDeclarationId(entrySymbolId, Compilation))
+                        builder.Add(entrySymbol, new AdjustmentsInfo(entry.Value, hasCompiliationAdjustments: false));
+                }
+
+                foreach (var entry in _adjustments)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    string entrySymbolId = entry.Key;
+
+                    foreach (var entrySymbol in DocumentationCommentId.GetSymbolsForDeclarationId(entrySymbolId, Compilation))
+                    {
+                        var adjustments = entry.Value;
+
+                        if (builder.TryGetValue(entrySymbol, out var oldValue))
+                            adjustments = ExceptionAdjustments.ApplyAdjustments(oldValue.Adjustments, adjustments);
+
+                        builder[entrySymbol] = new AdjustmentsInfo(adjustments, hasCompiliationAdjustments: true);
+                    }
+                }
+
+                var adjustmentsCache = builder.ToImmutable();
+
+                _ = Interlocked.CompareExchange(ref _lazyAdjustmentsCache, adjustmentsCache, null);
             }
 
-            var exceptionTypes = builder.ToImmutable();
-            builder.Free();
+            return _lazyAdjustmentsCache.TryGetValue(symbol, out adjustmentInfo);
+        }
 
-            return exceptionTypes;
+        internal readonly struct AdjustmentsInfo
+        {
+            public readonly ImmutableArray<MemberExceptionAdjustment> Adjustments;
+            public readonly bool HasCompilationAdjustments;
+
+            public AdjustmentsInfo(ImmutableArray<MemberExceptionAdjustment> adjustments, bool hasCompiliationAdjustments)
+            {
+                Adjustments = adjustments;
+                HasCompilationAdjustments = hasCompiliationAdjustments;
+            }
         }
     }
 }

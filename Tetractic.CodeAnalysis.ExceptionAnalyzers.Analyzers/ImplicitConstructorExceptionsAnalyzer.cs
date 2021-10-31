@@ -42,8 +42,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var additionalFiles = compilationStartContext.Options.AdditionalFiles;
                 var cancellationToken = compilationStartContext.CancellationToken;
 
-                var adjustments = ExceptionAdjustments.Load(additionalFiles, cancellationToken);
-                var documentedExceptionTypesProvider = GetOrCreateDocumentedExceptionTypesProvider(compilation, adjustments);
+                var exceptionAdjustments = ExceptionAdjustments.Load(additionalFiles, cancellationToken);
+                var documentedExceptionTypesProvider = GetOrCreateDocumentedExceptionTypesProvider(compilation, exceptionAdjustments);
 
                 var contextCache = new ConcurrentDictionary<AnalyzerConfigOptions, Context>();
 
