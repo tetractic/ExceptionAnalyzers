@@ -1,4 +1,9 @@
-﻿P:System.ArraySegment`1.System#Collections#Generic#IList{T}#Item(System.Int32) get -T:System.NotSupportedException
+﻿# Exception adjustments in this file are applied automatically to any project using Exception
+# Analyzers and should be limited to fixing up exception analysis of the BCL.
+
+M:System.Threading.CancellationToken.ThrowIfCancellationRequested $thrower -T:System.ObjectDisposedException
+
+P:System.ArraySegment`1.System#Collections#Generic#IList{T}#Item(System.Int32) get -T:System.NotSupportedException
 P:System.ArraySegment`1.System#Collections#Generic#IReadOnlyList{T}#Item(System.Int32) get -T:System.NotSupportedException
 P:System.Collections.ArrayList.Capacity get -T:System.ArgumentOutOfRangeException
 P:System.Collections.BitArray.Length get -T:System.ArgumentOutOfRangeException
