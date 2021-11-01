@@ -515,7 +515,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             continue;
 
                         var originalExceptionType = thrownExceptionType.ExceptionType.OriginalDefinition;
-                        if (!originalExceptionType.HasBaseConversionTo(Context.IntransitiveExceptionTypes) || IsThrowHelper(throwerSymbol, thrownExceptionType.ExceptionType))
+                        if (IsTransitive(throwerSymbol, accessorKind, originalExceptionType))
                             if (!TryIgnoreOrAddCaughtExceptionType(thrownExceptionType.ExceptionType, originalExceptionType))
                                 _builder.Add(thrownExceptionType.ExceptionType);
                     }
@@ -526,6 +526,66 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         _builder.Clear();
 
                         HandleUncaughtExceptionTypes(span, throwerSymbol, accessorKind, uncaughtTypes);
+                    }
+                }
+
+                bool IsTransitive(ISymbol throwerSymbol, AccessorKind throwerAccessorKind, INamedTypeSymbol originalExceptionType)
+                {
+                    bool result = IsThrowHelper(throwerSymbol, throwerAccessorKind, originalExceptionType);
+
+                    if (!result)
+                    {
+                        ImmutableArray<INamedTypeSymbol> intransitiveExceptionTypes;
+                        switch (throwerSymbol.DeclaredAccessibility)
+                        {
+                            case Accessibility.Private:
+                                intransitiveExceptionTypes = Context.IntransitiveExceptionTypesPrivate;
+                                break;
+                            case Accessibility.ProtectedAndInternal:
+                            case Accessibility.Internal:
+                                intransitiveExceptionTypes = Context.IntransitiveExceptionTypesInternal;
+                                break;
+                            default:
+                                intransitiveExceptionTypes = Context.IntransitiveExceptionTypesPublic;
+                                break;
+                        }
+
+                        result = !originalExceptionType.HasBaseConversionTo(intransitiveExceptionTypes);
+                    }
+
+                    if (Context.DocumentedExceptionTypesProvider.TryGetExceptionAdjustments(throwerSymbol, out var adjustments, CancellationToken))
+                        result = ExceptionAdjustments.ApplyFlagAdjustments(result, adjustments, throwerAccessorKind, "transitive", originalExceptionType);
+
+                    return result;
+                }
+
+                bool IsThrowHelper(ISymbol throwerSymbol, AccessorKind throwerAccessorKind, INamedTypeSymbol originalExceptionType)
+                {
+                    if (throwerSymbol.Kind != SymbolKind.Method)
+                        return false;
+
+                    bool result = IsThrowHelperName(throwerSymbol.Name);
+
+                    if (Context.DocumentedExceptionTypesProvider.TryGetExceptionAdjustments(throwerSymbol, out var adjustments, CancellationToken))
+                        result = ExceptionAdjustments.ApplyFlagAdjustments(result, adjustments, throwerAccessorKind, "thrower", originalExceptionType);
+
+                    return result;
+
+                    static bool IsThrowHelperName(string name)
+                    {
+                        const string prefix = "Throw";
+
+                        if (name.Length >= 5 && name.StartsWith(prefix, StringComparison.Ordinal))
+                        {
+                            if (name.Length == 5)
+                                return true;
+                            char c = name[prefix.Length];
+                            return c < 'a' || c > 'z';
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
                 }
             }
@@ -915,73 +975,6 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 }
 
                 HandleThrownExceptionTypes(span, symbol, accessorKinds);
-            }
-
-            /// <summary>
-            /// Indicates whether a symbol is a throw helper.
-            /// </summary>
-            private bool IsThrowHelper(ISymbol symbol, INamedTypeSymbol exceptionType)
-            {
-                if (symbol.Kind != SymbolKind.Method)
-                    return false;
-
-                bool result = IsThrowHelperName(symbol.Name);
-
-                string? exceptionTypeId = exceptionType.GetDeclarationDocumentationCommentId();
-
-                if (Context.DocumentedExceptionTypesProvider.TryGetExceptionAdjustments(symbol, out var adjustments, CancellationToken))
-                {
-                    const string throwerFlag = "thrower";
-
-                    if (result)
-                    {
-                        foreach (var adjustment in adjustments)
-                        {
-                            if (adjustment.Kind == ExceptionAdjustmentKind.Removal &&
-                                adjustment.Accessor == null &&
-                                adjustment.Flag == throwerFlag &&
-                                adjustment.ExceptionTypeId == exceptionTypeId)
-                            {
-                                result = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!result)
-                    {
-                        foreach (var adjustment in adjustments)
-                        {
-                            if (adjustment.Kind == ExceptionAdjustmentKind.Addition &&
-                                adjustment.Accessor == null &&
-                                adjustment.Flag == throwerFlag &&
-                                adjustment.ExceptionTypeId == exceptionTypeId)
-                            {
-                                result = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                return result;
-
-                static bool IsThrowHelperName(string name)
-                {
-                    const string throwHelperName = "Throw";
-
-                    if (name.Length >= 5 && name.StartsWith(throwHelperName, StringComparison.Ordinal))
-                    {
-                        if (name.Length == 5)
-                            return true;
-                        char c = name[throwHelperName.Length];
-                        return c < 'a' || c > 'z';
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
             }
 
             /// <summary>

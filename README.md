@@ -61,13 +61,29 @@ Default value: `System.NullReferenceException, System.StackOverflowException, Sy
 
 #### dotnet_intransitive_exceptions
 
-Provides a list of exception types that will be ignored by exception analysis when not thrown directly.  This is useful for exception types that generally indicate incorrect code when thrown.  The conditions under which these exception types are thrown should be documented, but those conditions should be avoidable and avoided in correctly-written code.
+Provides a list of exception types that will be ignored by exception analysis when thrown by a referenced public or protected member.  (The exception types will not be ignored when thrown via `throw` or by a referenced private or internal member.)  This is useful for exception types that generally indicate incorrect code when thrown.  The conditions under which these exception types are thrown should be documented, but those conditions should be avoidable and avoided in correctly-written code.
 
 For example, it should be possible to avoid providing unacceptable arguments that would cause an `ArgumentException` to be thrown.  `ArgumentException` and its subtypes, in particular, are so pervasive that reporting a diagnostic for every method invocation that might throw one of them would be unhelpful.
 
 Setting name: `dotnet_intransitive_exceptions`\
 Value: A comma-separated list of fully-qualified type names.\
 Default value: `System.ArgumentException, System.IndexOutOfRangeException, System.InvalidCastException, System.InvalidOperationException, System.Collections.Generic.KeyNotFoundException`
+
+#### dotnet_intransitive_exceptions_private
+
+Provides a list of exception types that will be ignored by exception analysis when thrown by a referenced private member.
+
+Setting name: `dotnet_intransitive_exceptions_private`\
+Value: A comma-separated list of fully-qualified type names.\
+Default value: `System.ArgumentException, System.IndexOutOfRangeException, System.InvalidCastException, System.Collections.Generic.KeyNotFoundException`
+
+#### dotnet_intransitive_exceptions_internal
+
+Provides a list of exception types that will be ignored by exception analysis when thrown by a referenced internal member.
+
+Setting name: `dotnet_intransitive_exceptions_internal`\
+Value: A comma-separated list of fully-qualified type names.\
+Default value: The value that was provided for `dotnet_intransitive_exceptions_private`.
 
 ### Exception Adjustments
 

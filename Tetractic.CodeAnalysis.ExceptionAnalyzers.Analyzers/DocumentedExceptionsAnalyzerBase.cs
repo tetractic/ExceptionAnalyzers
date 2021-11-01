@@ -53,11 +53,24 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     ? GetTypeSymbolsByDeclarationId(compilation, ignoredExceptionNames)
                     : GetDefaultIgnoredExceptionTypeSymbols(compilation);
 
-                var intransitiveExceptionTypes = options.TryGetValue("dotnet_intransitive_exceptions", out string intransitiveExceptionTypeNames)
-                    ? GetTypeSymbolsByDeclarationId(compilation, intransitiveExceptionTypeNames)
-                    : GetDefaultIntransitiveExceptionTypeSymbols(compilation);
+                var intransitiveExceptionTypesPublic = options.TryGetValue("dotnet_intransitive_exceptions", out string intransitiveExceptionTypeNamesPublic)
+                    ? GetTypeSymbolsByDeclarationId(compilation, intransitiveExceptionTypeNamesPublic)
+                    : GetDefaultIntransitiveExceptionTypeSymbolsPublic(compilation);
 
-                context = contextCache.GetOrAdd(options, new Context(documentedExceptionTypesProvider, ignoredExceptionTypes, intransitiveExceptionTypes));
+                var intransitiveExceptionTypesPrivate = options.TryGetValue("dotnet_intransitive_exceptions_private", out string intransitiveExceptionTypeNamesPrivate)
+                    ? GetTypeSymbolsByDeclarationId(compilation, intransitiveExceptionTypeNamesPrivate)
+                    : GetDefaultIntransitiveExceptionTypeSymbolsPrivate(compilation);
+
+                var intransitiveExceptionTypesInternal = options.TryGetValue("dotnet_intransitive_exceptions_internal", out string intransitiveExceptionTypeNamesInternal)
+                    ? GetTypeSymbolsByDeclarationId(compilation, intransitiveExceptionTypeNamesInternal)
+                    : intransitiveExceptionTypesPrivate;
+
+                context = contextCache.GetOrAdd(options, new Context(
+                    documentedExceptionTypesProvider,
+                    ignoredExceptionTypes,
+                    intransitiveExceptionTypesPublic,
+                    intransitiveExceptionTypesPrivate,
+                    intransitiveExceptionTypesInternal));
             }
 
             return context;
@@ -96,7 +109,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             });
         }
 
-        private static ImmutableArray<INamedTypeSymbol> GetDefaultIntransitiveExceptionTypeSymbols(Compilation compilation)
+        private static ImmutableArray<INamedTypeSymbol> GetDefaultIntransitiveExceptionTypeSymbolsPublic(Compilation compilation)
         {
             return GetTypeSymbolsByDeclarationId(compilation, new[]
             {
@@ -104,6 +117,17 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 "System.IndexOutOfRangeException",
                 "System.InvalidCastException",
                 "System.InvalidOperationException",
+                "System.Collections.Generic.KeyNotFoundException",
+            });
+        }
+
+        private static ImmutableArray<INamedTypeSymbol> GetDefaultIntransitiveExceptionTypeSymbolsPrivate(Compilation compilation)
+        {
+            return GetTypeSymbolsByDeclarationId(compilation, new[]
+            {
+                "System.ArgumentException",
+                "System.IndexOutOfRangeException",
+                "System.InvalidCastException",
                 "System.Collections.Generic.KeyNotFoundException",
             });
         }

@@ -380,6 +380,92 @@ class C
         }
 
         [TestMethod]
+        public async Task IntransitiveExceptionThrowingPrivateMethodCall()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    /// <exception cref=""ArgumentException""/>
+    /// <exception cref=""InvalidOperationException""/>
+    private void M1() => throw new InvalidOperationException();
+
+    public void M2()
+    {
+        {|#0:M1|}();
+    }
+}";
+
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M2()", "InvalidOperationException");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task IntransitiveExceptionThrowingInternalMethodCall()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    /// <exception cref=""ArgumentException""/>
+    /// <exception cref=""InvalidOperationException""/>
+    internal void M1() => throw new InvalidOperationException();
+
+    public void M2()
+    {
+        {|#0:M1|}();
+    }
+}";
+
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M2()", "InvalidOperationException");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task IntransitiveExceptionThrowingLocalFunctionMethodCall()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M(bool b)
+    {
+        {|#0:F1|}(b);
+
+        {|#1:F2|}(b);
+
+        void F1(bool b)
+        {
+            if (b)
+                throw new ArgumentException();
+            else
+                throw new InvalidOperationException();
+        }
+
+        /// <exception cref=""ArgumentException""/>
+        /// <exception cref=""InvalidOperationException""/>
+        void F2(bool b)
+        {
+            if (b)
+                throw new ArgumentException();
+            else
+                throw new InvalidOperationException();
+        }
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M(bool)", "InvalidOperationException"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(1).WithArguments("M(bool)", "InvalidOperationException"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
         public async Task NameOf()
         {
             var source = @"

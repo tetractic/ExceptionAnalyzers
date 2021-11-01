@@ -19,11 +19,15 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             public Context(
                 DocumentedExceptionTypesProvider documentedExceptionTypesProvider,
                 ImmutableArray<INamedTypeSymbol> ignoredExceptionTypes,
-                ImmutableArray<INamedTypeSymbol> intransitiveExceptionTypes)
+                ImmutableArray<INamedTypeSymbol> intransitiveExceptionTypesPublic,
+                ImmutableArray<INamedTypeSymbol> intransitiveExceptionTypesPrivate,
+                ImmutableArray<INamedTypeSymbol> intransitiveExceptionTypesInternal)
             {
                 DocumentedExceptionTypesProvider = documentedExceptionTypesProvider;
                 IgnoredExceptionTypes = ignoredExceptionTypes;
-                IntransitiveExceptionTypes = intransitiveExceptionTypes;
+                IntransitiveExceptionTypesPublic = intransitiveExceptionTypesPublic;
+                IntransitiveExceptionTypesPrivate = intransitiveExceptionTypesPrivate;
+                IntransitiveExceptionTypesInternal = intransitiveExceptionTypesInternal;
             }
 
             public Compilation Compilation => DocumentedExceptionTypesProvider.Compilation;
@@ -32,7 +36,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public ImmutableArray<INamedTypeSymbol> IgnoredExceptionTypes { get; }
 
-            public ImmutableArray<INamedTypeSymbol> IntransitiveExceptionTypes { get; }
+            public ImmutableArray<INamedTypeSymbol> IntransitiveExceptionTypesPublic { get; }
+
+            public ImmutableArray<INamedTypeSymbol> IntransitiveExceptionTypesPrivate { get; }
+
+            public ImmutableArray<INamedTypeSymbol> IntransitiveExceptionTypesInternal { get; }
         }
     }
 }

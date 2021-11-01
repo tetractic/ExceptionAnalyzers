@@ -175,6 +175,55 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 : builder.ToImmutable();
         }
 
+        public static bool ApplyFlagAdjustments(bool result, ImmutableArray<MemberExceptionAdjustment> adjustments, AccessorKind accessorKind, string flag, INamedTypeSymbol exceptionType)
+        {
+            string? exceptionTypeId = exceptionType.GetDeclarationDocumentationCommentId();
+
+            result = ApplyFlagAdjustmentsCore(result, adjustments, AccessorKind.Unspecified, flag, exceptionTypeId);
+
+            if (accessorKind != AccessorKind.Unspecified)
+                result = ApplyFlagAdjustmentsCore(result, adjustments, accessorKind, flag, exceptionTypeId);
+
+            return result;
+
+            static bool ApplyFlagAdjustmentsCore(bool result, ImmutableArray<MemberExceptionAdjustment> adjustments, AccessorKind accessorKind, string flag, string? exceptionTypeId)
+            {
+                string? accessor = DocumentedExceptionType.GetAccessorName(accessorKind);
+
+                if (result)
+                {
+                    foreach (var adjustment in adjustments)
+                    {
+                        if (adjustment.Kind == ExceptionAdjustmentKind.Removal &&
+                            adjustment.Accessor == accessor &&
+                            adjustment.Flag == flag &&
+                            adjustment.ExceptionTypeId == exceptionTypeId)
+                        {
+                            result = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (!result)
+                {
+                    foreach (var adjustment in adjustments)
+                    {
+                        if (adjustment.Kind == ExceptionAdjustmentKind.Addition &&
+                            adjustment.Accessor == accessor &&
+                            adjustment.Flag == flag &&
+                            adjustment.ExceptionTypeId == exceptionTypeId)
+                        {
+                            result = true;
+                            break;
+                        }
+                    }
+                }
+
+                return result;
+            }
+        }
+
         private static ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> GetGlobalAdjustments()
         {
             using (var stream = typeof(ExceptionAdjustments).Assembly.GetManifestResourceStream("Tetractic.CodeAnalysis.ExceptionAnalyzers.GlobalExceptionAdjustments.txt"))
