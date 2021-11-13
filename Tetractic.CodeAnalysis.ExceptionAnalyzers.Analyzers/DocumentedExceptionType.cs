@@ -10,9 +10,11 @@
 using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
+    [DebuggerDisplay("AccessorKind = {AccessorKind}, ExceptionType = {ExceptionType}")]
     internal readonly struct DocumentedExceptionType
     {
         public DocumentedExceptionType(INamedTypeSymbol exceptionType, AccessorKind accessorKind)

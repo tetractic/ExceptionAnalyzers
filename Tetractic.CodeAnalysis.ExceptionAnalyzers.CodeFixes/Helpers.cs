@@ -112,6 +112,31 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 isInlinable: false);
         }
 
+        public static SyntaxNode? GetMemberDeclarationSyntax(SyntaxNode node)
+        {
+            foreach (var ancestorOrSelfNode in node.AncestorsAndSelf())
+            {
+                switch (ancestorOrSelfNode.Kind())
+                {
+                    case SyntaxKind.LocalFunctionStatement:
+                    case SyntaxKind.EnumMemberDeclaration:
+                    case SyntaxKind.FieldDeclaration:
+                    case SyntaxKind.EventFieldDeclaration:
+                    case SyntaxKind.MethodDeclaration:
+                    case SyntaxKind.OperatorDeclaration:
+                    case SyntaxKind.ConversionOperatorDeclaration:
+                    case SyntaxKind.ConstructorDeclaration:
+                    case SyntaxKind.DestructorDeclaration:
+                    case SyntaxKind.PropertyDeclaration:
+                    case SyntaxKind.EventDeclaration:
+                    case SyntaxKind.IndexerDeclaration:
+                        return ancestorOrSelfNode;
+                }
+            }
+
+            return null;
+        }
+
         private static string GetAdjustmentFileHeader(string endOfLine)
         {
             return @"# Due to [1], you may have to manually change the ""Build Action"" of this file to ""C# analyzer additional file""." + endOfLine +

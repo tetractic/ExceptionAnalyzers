@@ -8,7 +8,6 @@
 // names, trademarks, or service marks.
 
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using System.Collections.Immutable;
 using System.Composition;
@@ -18,12 +17,11 @@ using System.Threading.Tasks;
 namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MemberExceptionsCodeFixProvider)), Shared]
-    public sealed class MemberExceptionsCodeFixProvider : CodeFixProvider
+    public sealed class MemberInitializerExceptionsCodeFixProvider : CodeFixProvider
     {
         public sealed override ImmutableArray<string> FixableDiagnosticIds { get; } = ImmutableArray.Create(new[]
         {
-            MemberExceptionsAnalyzer.DiagnosticId,
-            MemberExceptionsAnalyzer.AccessorDiagnosticId,
+            MemberExceptionsAnalyzer.InitializerDiagnosticId,
         });
 
         public sealed override FixAllProvider? GetFixAllProvider() => null;
@@ -45,59 +43,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     .Select(x => (ExceptionTypeId: x, ExceptionType: DocumentationCommentId.GetFirstSymbolForDeclarationId(x, compilation)))
                     .ToArray();
 
-                string? memberId = diagnostic.Properties[MemberExceptionsAnalyzer.PropertyKeys.MemberId];
-
-                string? accessor;
-                _ = diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.Accessor, out accessor);
-
                 var declaration = Helpers.GetMemberDeclarationSyntax(node)!;
-
-                var codeActions = exceptionTypeIdsAndTypes
-                    .Select(x =>
-                    {
-                        string exceptionTypeId = x.ExceptionTypeId;
-                        var exceptionType = x.ExceptionType;
-
-                        string exceptionName = exceptionType != null
-                            ? exceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
-                            : exceptionTypeId;
-
-                        return CodeAction.Create(
-                            title: $"Document '{exceptionName}'",
-                            createChangedDocument: async cancellationToken =>
-                            {
-                                string cref;
-                                if (exceptionType != null)
-                                {
-                                    var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-
-                                    cref = exceptionType.ToMinimalDisplayString(semanticModel, position: declaration.SpanStart).Replace('<', '{').Replace('>', '}');
-                                }
-                                else
-                                {
-                                    cref = exceptionTypeId;
-                                }
-
-                                var newDeclaration = declaration.WithLeadingTrivia(
-                                    Helpers.AddExceptionXmlElement(
-                                        declaration.GetLeadingTrivia(),
-                                        cref,
-                                        accessor));
-
-                                var newSyntaxRoot = syntaxRoot.ReplaceNode(declaration, newDeclaration);
-
-                                return document.WithSyntaxRoot(newSyntaxRoot);
-                            },
-                            equivalenceKey: $"{memberId} {accessor} {exceptionTypeId}");
-                    })
-                    .ToImmutableArray();
-
-                context.RegisterCodeFix(
-                    CodeAction.Create(
-                        title: "Document exceptions",
-                        nestedActions: codeActions,
-                        isInlinable: true),
-                    diagnostic);
 
                 string throwerMemberId;
                 if (diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.ThrowerMemberId, out throwerMemberId))

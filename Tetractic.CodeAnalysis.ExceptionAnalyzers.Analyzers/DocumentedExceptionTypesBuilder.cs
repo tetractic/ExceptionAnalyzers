@@ -85,8 +85,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             Add(exceptionType, AccessorKind.Remove);
                         break;
                     }
-
                     goto default;
+
+                case SymbolKind.Field:
+                    break;
 
                 case SymbolKind.Property:
                     if (accessorKind == AccessorKind.Unspecified)
@@ -98,7 +100,6 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             Add(exceptionType, AccessorKind.Set);
                         break;
                     }
-
                     goto default;
 
                 default:

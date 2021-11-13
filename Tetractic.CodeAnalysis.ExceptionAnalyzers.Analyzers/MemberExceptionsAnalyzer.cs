@@ -39,6 +39,16 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
+        public const string InitializerDiagnosticId = "Ex0104";
+
+        internal static readonly DiagnosticDescriptor InitializerRule = new DiagnosticDescriptor(
+            id: InitializerDiagnosticId,
+            title: "Member initializer may throw undocumented exception",
+            messageFormat: "'{0}' initializer may throw undocumented exception: {1}",
+            category: "Design",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
         public const string DelegateDiagnosticId = "Ex0120";
 
         internal static readonly DiagnosticDescriptor DelegateCreationRule = new DiagnosticDescriptor(
@@ -63,6 +73,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             Rule,
             AccessorRule,
+            InitializerRule,
             DelegateCreationRule,
             AnonymousDelegateCreationRule,
             ExceptionAdjustmentsFileAnalyzer.SyntaxErrorRule,
@@ -112,6 +123,14 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 switch (node.Kind())
                 {
+                    case SyntaxKind.FieldDeclaration:
+                    {
+                        var fieldSyntax = (FieldDeclarationSyntax)node;
+
+                        visitor.Analyze(fieldSyntax);
+                        break;
+                    }
+
                     case SyntaxKind.MethodDeclaration:
                     case SyntaxKind.OperatorDeclaration:
                     case SyntaxKind.ConversionOperatorDeclaration:

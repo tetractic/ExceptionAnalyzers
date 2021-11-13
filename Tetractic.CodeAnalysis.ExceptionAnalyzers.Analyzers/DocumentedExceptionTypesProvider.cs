@@ -154,6 +154,20 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             while (declaration.Kind() != SyntaxKind.EventFieldDeclaration);
                             break;
                         }
+                        else if (symbol.Kind == SymbolKind.Field)
+                        {
+                            do
+                            {
+                                declaration = declaration.Parent;
+                                if (declaration == null)
+                                {
+                                    Debug.Assert(false, $"Expected field variable declarator to have field declaration ancestor.");
+                                    goto default;
+                                }
+                            }
+                            while (declaration.Kind() != SyntaxKind.FieldDeclaration);
+                            break;
+                        }
                         goto default;
 
                     case SyntaxKind.LocalFunctionStatement:

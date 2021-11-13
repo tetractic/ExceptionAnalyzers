@@ -37,6 +37,19 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
             }
 
+            public void Analyze(FieldDeclarationSyntax fieldSyntax)
+            {
+                foreach (var variableSyntax in fieldSyntax.Declaration.Variables)
+                {
+                    if (variableSyntax.Initializer != null)
+                    {
+                        var symbol = SemanticModel.GetDeclaredSymbol(variableSyntax, CancellationToken);
+
+                        Analyze(symbol, AccessorKind.Unspecified, fieldSyntax, variableSyntax.Initializer);
+                    }
+                }
+            }
+
             public void Analyze(BaseMethodDeclarationSyntax baseMethodSyntax)
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(baseMethodSyntax, CancellationToken);
@@ -58,6 +71,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         var propertySyntax = (PropertyDeclarationSyntax)basePropertySyntax;
                         if (propertySyntax.ExpressionBody != null)
                             Analyze(symbol, AccessorKind.Get, propertySyntax, propertySyntax.ExpressionBody);
+                        if (propertySyntax.Initializer != null)
+                            Analyze(symbol, AccessorKind.Unspecified, propertySyntax, propertySyntax.Initializer);
                         break;
                     }
                     case SyntaxKind.IndexerDeclaration:
@@ -231,7 +246,19 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 if (_accessorKind == AccessorKind.Unspecified)
                 {
-                    if (_symbol.Kind == SymbolKind.Method)
+                    if (_symbol.Kind == SymbolKind.Field ||
+                        _symbol.Kind == SymbolKind.Property)
+                    {
+                        symbolName = _symbol.ToDisplayString(MemberDiagnosticDisplayFormat);
+
+                        SemanticModelContext.ReportDiagnostic(Diagnostic.Create(
+                            descriptor: InitializerRule,
+                            location: SemanticModel.SyntaxTree.GetLocation(span),
+                            properties: properties,
+                            messageArgs: new[] { symbolName, exceptionNames }));
+                        return;
+                    }
+                    else if (_symbol.Kind == SymbolKind.Method)
                     {
                         var methodSymbol = (IMethodSymbol)_symbol;
                         switch (methodSymbol.MethodKind)
@@ -239,7 +266,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             case MethodKind.Constructor:
                             case MethodKind.StaticConstructor:
                             {
-                                symbolName = _symbol.ToDisplayString(ConstructorDiagnosticDisplayFormat);
+                                symbolName = methodSymbol.ToDisplayString(ConstructorDiagnosticDisplayFormat);
 
                                 SemanticModelContext.ReportDiagnostic(Diagnostic.Create(
                                     descriptor: Rule,
