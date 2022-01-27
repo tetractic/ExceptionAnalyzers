@@ -105,7 +105,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 "System.NullReferenceException",
                 "System.StackOverflowException",
-                "System.UnreachableException",
+                "System.Diagnostics.UnreachableException",
             });
         }
 

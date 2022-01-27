@@ -57,7 +57,7 @@ Provides a list of exception types that will be ignored by exception analysis.
 
 Setting name: `dotnet_ignored_exceptions`\
 Value: A comma-separated list of fully-qualified type names.\
-Default value: `System.NullReferenceException, System.StackOverflowException, System.UnreachableException`
+Default value: `System.NullReferenceException, System.StackOverflowException, System.Diagnostics.UnreachableException`
 
 #### dotnet_intransitive_exceptions
 

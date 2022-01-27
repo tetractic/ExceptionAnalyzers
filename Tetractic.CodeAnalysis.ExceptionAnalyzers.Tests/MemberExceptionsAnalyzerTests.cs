@@ -311,9 +311,9 @@ class C
         public async Task ThrowIgnored()
         {
             var source = @"
-using System;
+using System.Diagnostics;
 
-namespace System
+namespace System.Diagnostics
 {
     public class UnreachableException : Exception {}
 }
