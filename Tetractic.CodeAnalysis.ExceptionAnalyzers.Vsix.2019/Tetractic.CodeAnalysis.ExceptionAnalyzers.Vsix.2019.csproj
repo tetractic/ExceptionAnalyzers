@@ -19,6 +19,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="..\LICENSE.txt" Link="LICENSE.txt">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="..\Tetractic.CodeAnalysis.ExceptionAnalyzers.Package\PackageIcon.png" Link="PackageIcon.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>

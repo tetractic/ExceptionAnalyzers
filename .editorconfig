@@ -11,7 +11,6 @@ trim_trailing_whitespace = true
 
 file_header_template = Copyright 2021 Carl Reinke\n\nThis file is part of a library that is licensed under the terms of GNU Lesser\nGeneral Public License version 3 as published by the Free Software\nFoundation.\n\nThis license does not grant rights under trademark law for use of any trade\nnames, trademarks, or service marks.
 
-
 #### .NET Coding Conventions ####
 
 # Organize usings
@@ -207,6 +206,8 @@ dotnet_naming_rule.locals_rule.severity = warning
 dotnet_naming_rule.locals_rule.symbols = local_symbol
 dotnet_naming_rule.locals_rule.style = local_style
 
+#### Analyzer rules ####
+
 # Microsoft.NetCore.Analyzers
 
 # CA1303: Do not pass literals as localized parameters
@@ -214,3 +215,9 @@ dotnet_diagnostic.CA1303.severity = none
 
 # CA2016: Forward the CancellationToken parameter to methods that take one
 dotnet_diagnostic.CA2016.severity = warning
+
+[*.vsixmanifest]
+indent_size = 2
+indent_style = space
+trim_trailing_whitespace = true
+insert_final_newline = true
