@@ -26,7 +26,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public static ImmutableDictionary<string, MemberInfo>? GetMemberInfos(PortableExecutableReference peReference)
             {
-                string pePath = peReference.FilePath;
+                string? pePath = peReference.FilePath;
                 if (string.IsNullOrEmpty(pePath))
                     return null;
 

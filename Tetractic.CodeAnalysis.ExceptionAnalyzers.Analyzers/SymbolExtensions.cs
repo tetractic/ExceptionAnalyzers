@@ -13,6 +13,13 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
     internal static class SymbolExtensions
     {
+        /// <summary>
+        /// Gets the first location where the symbol was originally defined or
+        /// <see cref="Location.None"/> if the symbol has no location.  Which location is first is
+        /// unspecified.
+        /// </summary>
+        /// <param name="symbol">The symbol.</param>
+        /// <returns>The first location where the symbol was originally defined.</returns>
         public static Location GetFirstLocationOrNone(this ISymbol symbol)
         {
             var locations = symbol.Locations;
@@ -35,7 +42,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var methodSymbol = (IMethodSymbol)symbol;
 
                 if (methodSymbol.MethodKind == MethodKind.ReducedExtension)
-                    symbol = methodSymbol.ReducedFrom;
+                    symbol = methodSymbol.ReducedFrom!;
             }
 
             return symbol.OriginalDefinition;
@@ -50,7 +57,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 switch (methodSymbol.MethodKind)
                 {
                     case MethodKind.ReducedExtension:
-                        symbol = methodSymbol.ReducedFrom;
+                        symbol = methodSymbol.ReducedFrom!;
                         break;
 
                     case MethodKind.LocalFunction:

@@ -199,7 +199,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 // Ignore "nameof(...)".
                 if (node.Expression is IdentifierNameSyntax identifierNameSyntax &&
-                    identifierNameSyntax.Identifier.Kind() == SyntaxKind.NameOfKeyword)
+                    identifierNameSyntax.Identifier.IsKind(SyntaxKind.NameOfKeyword))
                 {
                     return;
                 }
@@ -236,7 +236,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var symbol = SemanticModel.GetDeclaredSymbol(node, CancellationToken);
                 if (symbol != null)
                 {
-                    var bodySyntax = (SyntaxNode)node.Body ?? node.ExpressionBody;
+                    var bodySyntax = (SyntaxNode?)node.Body ?? node.ExpressionBody;
 
                     EnqueueDeferred(symbol, AccessorKind.Unspecified, node, bodySyntax);
                 }
@@ -644,7 +644,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         {
                             var localFunctionSyntax = (LocalFunctionStatementSyntax)syntaxReference.GetSyntax(CancellationToken);
 
-                            var bodySyntax = (SyntaxNode)localFunctionSyntax.Body ?? localFunctionSyntax.ExpressionBody;
+                            var bodySyntax = (SyntaxNode?)localFunctionSyntax.Body ?? localFunctionSyntax.ExpressionBody;
 
                             _functionVisitor.Analyze(methodSymbol, localFunctionSyntax, bodySyntax);
                         }
@@ -724,7 +724,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 foreach (var trivia in leadingTrivia)
                 {
-                    if (trivia.Kind() == SyntaxKind.SingleLineCommentTrivia)
+                    if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia))
                     {
                         string line = trivia.ToString();
                         if (line.StartsWith(exceptionAdjustmentPrefix, StringComparison.Ordinal))
@@ -770,7 +770,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 }
             }
 
-            private bool TryGetCreatedDelegateType(ExpressionSyntax node, out ITypeSymbol delegateType)
+            private bool TryGetCreatedDelegateType(ExpressionSyntax node, [MaybeNullWhen(false)] out ITypeSymbol delegateType)
             {
                 delegateType = SemanticModel.GetTypeInfo(node, CancellationToken).ConvertedType;
                 if (delegateType == null)

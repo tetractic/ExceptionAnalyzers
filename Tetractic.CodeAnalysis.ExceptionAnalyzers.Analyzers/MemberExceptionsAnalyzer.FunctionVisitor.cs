@@ -100,7 +100,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         {
                             var localFunctionSyntax = (LocalFunctionStatementSyntax)syntaxReference.GetSyntax(CancellationToken);
 
-                            var bodySyntax = (SyntaxNode)localFunctionSyntax.Body ?? localFunctionSyntax.ExpressionBody;
+                            var bodySyntax = (SyntaxNode?)localFunctionSyntax.Body ?? localFunctionSyntax.ExpressionBody;
 
                             Analyze(methodSymbol, localFunctionSyntax, bodySyntax);
                             return;

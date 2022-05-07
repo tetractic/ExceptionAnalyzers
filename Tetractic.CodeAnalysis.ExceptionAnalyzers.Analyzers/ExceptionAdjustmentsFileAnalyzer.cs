@@ -23,7 +23,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         internal static readonly DiagnosticDescriptor SyntaxErrorRule = new DiagnosticDescriptor(
             id: SyntaxErrorDiagnosticId,
             title: "Exception adjustments syntax error",
-            messageFormat: "Syntax error.",
+            messageFormat: "Syntax error",
             category: "Analysis",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -31,7 +31,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         internal static readonly DiagnosticDescriptor ExpectedSpaceRule = new DiagnosticDescriptor(
             id: SyntaxErrorDiagnosticId,
             title: "Exception adjustments syntax error",
-            messageFormat: "Expected ' '.",
+            messageFormat: "Expected ' '",
             category: "Analysis",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -39,7 +39,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         internal static readonly DiagnosticDescriptor ExpectedIdentifierRule = new DiagnosticDescriptor(
             id: SyntaxErrorDiagnosticId,
             title: "Exception adjustments syntax error",
-            messageFormat: "Expected identifier.",
+            messageFormat: "Expected identifier",
             category: "Analysis",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -47,7 +47,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         internal static readonly DiagnosticDescriptor ExpectedAccessorOrOperatorRule = new DiagnosticDescriptor(
             id: SyntaxErrorDiagnosticId,
             title: "Exception adjustments syntax error",
-            messageFormat: "Expected accessor or '-' or '+'.",
+            messageFormat: "Expected accessor or '-' or '+'",
             category: "Analysis",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -55,7 +55,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         internal static readonly DiagnosticDescriptor ExpectedOperatorRule = new DiagnosticDescriptor(
             id: SyntaxErrorDiagnosticId,
             title: "Exception adjustments syntax error",
-            messageFormat: "Expected '-' or '+'.",
+            messageFormat: "Expected '-' or '+'",
             category: "Analysis",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -63,7 +63,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         internal static readonly DiagnosticDescriptor ExpectedEolRule = new DiagnosticDescriptor(
             id: SyntaxErrorDiagnosticId,
             title: "Exception adjustments syntax error",
-            messageFormat: "Expected end-of-line.",
+            messageFormat: "Expected end-of-line",
             category: "Analysis",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -73,7 +73,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         internal static readonly DiagnosticDescriptor SymbolRule = new DiagnosticDescriptor(
             id: SymbolDiagnosticId,
             title: "Exception adjustments syntax error",
-            messageFormat: "Symbol does not exist or identifier is invalid.",
+            messageFormat: "Symbol does not exist or identifier is invalid",
             category: "Analysis",
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);

@@ -216,6 +216,9 @@ dotnet_diagnostic.CA1303.severity = none
 # CA2016: Forward the CancellationToken parameter to methods that take one
 dotnet_diagnostic.CA2016.severity = warning
 
+# RS2008: Enable analyzer release tracking
+dotnet_diagnostic.RS2008.severity = none
+
 [*.vsixmanifest]
 indent_size = 2
 indent_style = space

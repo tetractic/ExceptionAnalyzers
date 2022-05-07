@@ -30,22 +30,22 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var document = context.Document;
-            var syntaxRoot = await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+            if (!document.SupportsSyntaxTree || !document.Project.SupportsCompilation)
+                return;
+
+            var syntaxRoot = (await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false))!;
 
             foreach (var diagnostic in context.Diagnostics)
             {
-                var diagnosticSpan = diagnostic.Location.SourceSpan;
-                var node = syntaxRoot.FindToken(diagnosticSpan.Start).Parent;
-
                 var compilation = (await document.Project.GetCompilationAsync(context.CancellationToken))!;
 
-                string[] exceptionTypeIds = diagnostic.Properties[SupertypeExceptionsAnalyzer.PropertyKeys.ExceptionTypeIds].Split(',');
+                string[] exceptionTypeIds = diagnostic.Properties[SupertypeExceptionsAnalyzer.PropertyKeys.ExceptionTypeIds]!.Split(',');
                 var exceptionTypeIdsAndTypes = exceptionTypeIds
                     .Select(x => (ExceptionTypeId: x, ExceptionType: DocumentationCommentId.GetFirstSymbolForDeclarationId(x, compilation)))
                     .ToArray();
 
                 string supertypeMemberId;
-                if (diagnostic.Properties.TryGetValue(SupertypeExceptionsAnalyzer.PropertyKeys.SupertypeMemberId, out supertypeMemberId))
+                if (diagnostic.Properties.TryGetValue(SupertypeExceptionsAnalyzer.PropertyKeys.SupertypeMemberId, out supertypeMemberId!))
                 {
                     var supertypeMember = DocumentationCommentId.GetFirstSymbolForDeclarationId(supertypeMemberId, compilation);
 

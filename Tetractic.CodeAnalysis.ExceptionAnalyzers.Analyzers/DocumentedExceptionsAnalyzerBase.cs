@@ -49,19 +49,19 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 var compilation = documentedExceptionTypesProvider.Compilation;
 
-                var ignoredExceptionTypes = options.TryGetValue("dotnet_ignored_exceptions", out string ignoredExceptionNames)
+                var ignoredExceptionTypes = options.TryGetValue("dotnet_ignored_exceptions", out string? ignoredExceptionNames)
                     ? GetTypeSymbolsByDeclarationId(compilation, ignoredExceptionNames)
                     : GetDefaultIgnoredExceptionTypeSymbols(compilation);
 
-                var intransitiveExceptionTypesPublic = options.TryGetValue("dotnet_intransitive_exceptions", out string intransitiveExceptionTypeNamesPublic)
+                var intransitiveExceptionTypesPublic = options.TryGetValue("dotnet_intransitive_exceptions", out string? intransitiveExceptionTypeNamesPublic)
                     ? GetTypeSymbolsByDeclarationId(compilation, intransitiveExceptionTypeNamesPublic)
                     : GetDefaultIntransitiveExceptionTypeSymbolsPublic(compilation);
 
-                var intransitiveExceptionTypesPrivate = options.TryGetValue("dotnet_intransitive_exceptions_private", out string intransitiveExceptionTypeNamesPrivate)
+                var intransitiveExceptionTypesPrivate = options.TryGetValue("dotnet_intransitive_exceptions_private", out string? intransitiveExceptionTypeNamesPrivate)
                     ? GetTypeSymbolsByDeclarationId(compilation, intransitiveExceptionTypeNamesPrivate)
                     : GetDefaultIntransitiveExceptionTypeSymbolsPrivate(compilation);
 
-                var intransitiveExceptionTypesInternal = options.TryGetValue("dotnet_intransitive_exceptions_internal", out string intransitiveExceptionTypeNamesInternal)
+                var intransitiveExceptionTypesInternal = options.TryGetValue("dotnet_intransitive_exceptions_internal", out string? intransitiveExceptionTypeNamesInternal)
                     ? GetTypeSymbolsByDeclarationId(compilation, intransitiveExceptionTypeNamesInternal)
                     : intransitiveExceptionTypesPrivate;
 
@@ -90,7 +90,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             var builder = ImmutableArray.CreateBuilder<INamedTypeSymbol>(typeNames.Length);
             foreach (string typeName in typeNames)
             {
-                var typeSymbol = (INamedTypeSymbol)DocumentationCommentId.GetFirstSymbolForDeclarationId("T:" + typeName, compilation);
+                var typeSymbol = (INamedTypeSymbol?)DocumentationCommentId.GetFirstSymbolForDeclarationId("T:" + typeName, compilation);
                 if (typeSymbol != null)
                     builder.Add(typeSymbol);
             }

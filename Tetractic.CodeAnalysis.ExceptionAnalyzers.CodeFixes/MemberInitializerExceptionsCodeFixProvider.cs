@@ -29,16 +29,20 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var document = context.Document;
-            var syntaxRoot = await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+            if (!document.SupportsSyntaxTree || !document.Project.SupportsCompilation)
+                return;
+
+            var syntaxRoot = (await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false))!;
 
             foreach (var diagnostic in context.Diagnostics)
             {
+                // Diagnostic is located on a token in the member initializer expression.
                 var diagnosticSpan = diagnostic.Location.SourceSpan;
-                var node = syntaxRoot.FindToken(diagnosticSpan.Start).Parent;
+                var node = syntaxRoot.FindToken(diagnosticSpan.Start).Parent!;
 
                 var compilation = (await document.Project.GetCompilationAsync(context.CancellationToken))!;
 
-                string[] exceptionTypeIds = diagnostic.Properties[MemberExceptionsAnalyzer.PropertyKeys.ExceptionTypeIds].Split(',');
+                string[] exceptionTypeIds = diagnostic.Properties[MemberExceptionsAnalyzer.PropertyKeys.ExceptionTypeIds]!.Split(',');
                 var exceptionTypeIdsAndTypes = exceptionTypeIds
                     .Select(x => (ExceptionTypeId: x, ExceptionType: DocumentationCommentId.GetFirstSymbolForDeclarationId(x, compilation)))
                     .ToArray();
@@ -46,7 +50,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var declaration = Helpers.GetMemberDeclarationSyntax(node)!;
 
                 string throwerMemberId;
-                if (diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.ThrowerMemberId, out throwerMemberId))
+                if (diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.ThrowerMemberId, out throwerMemberId!))
                 {
                     var throwerMember = DocumentationCommentId.GetFirstSymbolForDeclarationId(throwerMemberId, compilation);
 

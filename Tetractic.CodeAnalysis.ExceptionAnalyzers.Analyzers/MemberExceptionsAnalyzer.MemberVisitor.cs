@@ -54,7 +54,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(baseMethodSyntax, CancellationToken);
 
-                var bodySyntax = (SyntaxNode)baseMethodSyntax.Body ?? baseMethodSyntax.ExpressionBody;
+                var bodySyntax = (SyntaxNode?)baseMethodSyntax.Body ?? baseMethodSyntax.ExpressionBody;
 
                 Analyze(symbol, AccessorKind.Unspecified, baseMethodSyntax, bodySyntax);
             }
@@ -133,7 +133,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     }
                 }
 
-                var bodySyntax = (SyntaxNode)constructorSyntax.Body ?? constructorSyntax.ExpressionBody;
+                var bodySyntax = (SyntaxNode?)constructorSyntax.Body ?? constructorSyntax.ExpressionBody;
 
                 Analyze(symbol, AccessorKind.Unspecified, constructorSyntax, bodySyntax);
             }
@@ -177,7 +177,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         SemanticModelContext.ReportDiagnostic(Diagnostic.Create(
                             descriptor: AnonymousDelegateCreationRule,
                             location: SemanticModel.SyntaxTree.GetLocation(span),
-                            properties: ImmutableDictionary<string, string>.Empty,
+                            properties: ImmutableDictionary<string, string?>.Empty,
                             messageArgs: new[] { delegateType.Name, exceptionDisplayNames }));
                     }
                     else
@@ -185,7 +185,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         SemanticModelContext.ReportDiagnostic(Diagnostic.Create(
                             descriptor: DelegateCreationRule,
                             location: SemanticModel.SyntaxTree.GetLocation(span),
-                            properties: ImmutableDictionary<string, string>.Empty,
+                            properties: ImmutableDictionary<string, string?>.Empty,
                             messageArgs: new[] { delegateType.Name, symbol.Name, exceptionDisplayNames }));
                     }
                 }

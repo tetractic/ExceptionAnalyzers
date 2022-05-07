@@ -101,7 +101,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             SymbolAnalysisContext symbolContext,
             DocumentedExceptionTypesProvider documentedExceptionTypesProvider,
             ISymbol symbol,
-            ISymbol overriddenSymbol)
+            ISymbol? overriddenSymbol)
         {
             var cancellationToken = symbolContext.CancellationToken;
 

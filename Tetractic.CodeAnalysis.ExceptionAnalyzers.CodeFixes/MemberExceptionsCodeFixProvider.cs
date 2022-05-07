@@ -31,16 +31,20 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var document = context.Document;
-            var syntaxRoot = await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+            if (!document.SupportsSyntaxTree || !document.SupportsSemanticModel || !document.Project.SupportsCompilation)
+                return;
+
+            var syntaxRoot = (await document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false))!;
 
             foreach (var diagnostic in context.Diagnostics)
             {
+                // Diagnostic is located on a token in a statement or expression in the member body.
                 var diagnosticSpan = diagnostic.Location.SourceSpan;
-                var node = syntaxRoot.FindToken(diagnosticSpan.Start).Parent;
+                var node = syntaxRoot.FindToken(diagnosticSpan.Start).Parent!;
 
                 var compilation = (await document.Project.GetCompilationAsync(context.CancellationToken))!;
 
-                string[] exceptionTypeIds = diagnostic.Properties[MemberExceptionsAnalyzer.PropertyKeys.ExceptionTypeIds].Split(',');
+                string[] exceptionTypeIds = diagnostic.Properties[MemberExceptionsAnalyzer.PropertyKeys.ExceptionTypeIds]!.Split(',');
                 var exceptionTypeIdsAndTypes = exceptionTypeIds
                     .Select(x => (ExceptionTypeId: x, ExceptionType: DocumentationCommentId.GetFirstSymbolForDeclarationId(x, compilation)))
                     .ToArray();
@@ -69,7 +73,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                 string cref;
                                 if (exceptionType != null)
                                 {
-                                    var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+                                    var semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
                                     cref = exceptionType.ToMinimalDisplayString(semanticModel, position: declaration.SpanStart).Replace('<', '{').Replace('>', '}');
                                 }
@@ -100,7 +104,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     diagnostic);
 
                 string throwerMemberId;
-                if (diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.ThrowerMemberId, out throwerMemberId))
+                if (diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.ThrowerMemberId, out throwerMemberId!))
                 {
                     var throwerMember = DocumentationCommentId.GetFirstSymbolForDeclarationId(throwerMemberId, compilation);
 

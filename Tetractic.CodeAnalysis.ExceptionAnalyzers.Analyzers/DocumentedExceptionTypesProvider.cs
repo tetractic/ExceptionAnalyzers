@@ -151,7 +151,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                     goto default;
                                 }
                             }
-                            while (declaration.Kind() != SyntaxKind.EventFieldDeclaration);
+                            while (!declaration.IsKind(SyntaxKind.EventFieldDeclaration));
                             break;
                         }
                         else if (symbol.Kind == SymbolKind.Field)
@@ -165,7 +165,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                     goto default;
                                 }
                             }
-                            while (declaration.Kind() != SyntaxKind.FieldDeclaration);
+                            while (!declaration.IsKind(SyntaxKind.FieldDeclaration));
                             break;
                         }
                         goto default;
@@ -201,7 +201,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     if (builder == null)
                         builder = DocumentedExceptionTypesBuilder.Allocate();
 
-                    var documentationComment = (DocumentationCommentTriviaSyntax)trivia.GetStructure();
+                    var documentationComment = (DocumentationCommentTriviaSyntax?)trivia.GetStructure();
+                    if (documentationComment == null)
+                        continue;
 
                     foreach (var xmlNode in documentationComment.Content)
                     {
@@ -302,7 +304,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         private DocumentedExceptionTypesBuilder? GetDocumentedExceptionTypesFromSymbol(ISymbol symbol, [NotNullIfNotNull("symbolStack")] ref SymbolStack? symbolStack, CancellationToken cancellationToken)
         {
-            string documentationCommentXml = symbol.GetDocumentationCommentXml(cancellationToken: cancellationToken);
+            string? documentationCommentXml = symbol.GetDocumentationCommentXml(cancellationToken: cancellationToken);
             if (string.IsNullOrEmpty(documentationCommentXml))
                 return GetDocumentedExceptionTypesFromXmlFile(symbol, ref symbolStack, cancellationToken);
 
@@ -474,7 +476,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
         }
 
-        private void GetInheritedDocumentedExceptionTypes(ISymbol symbol, DocumentedExceptionTypesBuilder builder, ISymbol overriddenSymbol, CancellationToken cancellationToken)
+        private void GetInheritedDocumentedExceptionTypes(ISymbol symbol, DocumentedExceptionTypesBuilder builder, ISymbol? overriddenSymbol, CancellationToken cancellationToken)
         {
             // Get from overridden symbol.
             if (overriddenSymbol != null)
