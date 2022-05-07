@@ -743,6 +743,81 @@ class C3
         }
 
         [TestMethod]
+        public async Task ThrowingInferredConstructorCallInMethod()
+        {
+            var source = @"
+using System;
+
+class C1
+{
+    /// <exception cref=""Exception""></exception>
+    public C1() => throw new Exception();
+}
+
+class C2<T>
+{
+    /// <exception cref=""Exception""></exception>
+    public C2() => throw new Exception();
+}
+
+class C3
+{
+    public void M1()
+    {
+        C1 c1 = {|#0:new|}();
+        C2<int> c2 = {|#1:new|}();
+    }
+
+    public void M2<T>()
+    {
+        C1 c1 = {|#2:new|}();
+        C2<int> c2 = {|#3:new|}();
+    }
+}";
+
+            var fixedSource = @"
+using System;
+
+class C1
+{
+    /// <exception cref=""Exception""></exception>
+    public C1() => throw new Exception();
+}
+
+class C2<T>
+{
+    /// <exception cref=""Exception""></exception>
+    public C2() => throw new Exception();
+}
+
+class C3
+{
+    /// <exception cref=""Exception""></exception>
+    public void M1()
+    {
+        C1 c1 = new();
+        C2<int> c2 = new();
+    }
+
+    /// <exception cref=""Exception""></exception>
+    public void M2<T>()
+    {
+        C1 c1 = new();
+        C2<int> c2 = new();
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M1()", "Exception"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(1).WithArguments("M1()", "Exception"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(2).WithArguments("M2<T>()", "Exception"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(3).WithArguments("M2<T>()", "Exception"),
+            };
+            await VerifyCS.VerifyCodeFixAsync(source, expected, fixedSource);
+        }
+
+        [TestMethod]
         public async Task ThrowingBaseConstructorCallInConstructor()
         {
             var source = @"

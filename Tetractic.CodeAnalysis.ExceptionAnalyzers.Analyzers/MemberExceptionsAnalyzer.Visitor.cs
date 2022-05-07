@@ -178,6 +178,23 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 VisitSimpleName(node);
             }
 
+            public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
+            {
+                var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
+                if (symbol != null)
+                {
+                    Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing implicit object creation expression but symbol kind is {symbol.Kind}.");
+                    Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.Constructor, $"Analyzing implicit object creation expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
+
+                    var span = node.NewKeyword.Span;
+                    HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
+                }
+
+                Visit(node.ArgumentList, Access.Get);
+
+                Visit(node.Initializer, Access.Get);
+            }
+
             public override void VisitInvocationExpression(InvocationExpressionSyntax node)
             {
                 // Ignore "nameof(...)".
