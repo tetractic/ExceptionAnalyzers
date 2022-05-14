@@ -10,6 +10,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
+using System;
 using System.Collections.Immutable;
 using System.IO;
 
@@ -86,6 +87,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public override void Initialize(AnalysisContext context)
         {
+            if (context is null)
+                throw new ArgumentNullException(nameof(context));
+
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
 

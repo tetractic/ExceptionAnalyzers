@@ -203,7 +203,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                     var documentationComment = (DocumentationCommentTriviaSyntax?)trivia.GetStructure();
                     if (documentationComment == null)
-                        continue;
+                        throw new UnreachableException();
 
                     foreach (var xmlNode in documentationComment.Content)
                     {

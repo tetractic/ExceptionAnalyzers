@@ -10,6 +10,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Linq;
@@ -33,6 +34,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public override void Initialize(AnalysisContext context)
         {
+            if (context is null)
+                throw new ArgumentNullException(nameof(context));
+
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
 

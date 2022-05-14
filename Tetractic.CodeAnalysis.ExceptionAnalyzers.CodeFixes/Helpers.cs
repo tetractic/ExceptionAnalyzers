@@ -502,18 +502,18 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 var trivia = newLeadingTrivia[i];
 
-                if (trivia.Kind() == SyntaxKind.SingleLineCommentTrivia &&
+                if (trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) &&
                     trivia.ToString() == commentLine)
                 {
                     newLeadingTrivia = newLeadingTrivia.RemoveAt(i);
 
                     if (i < newLeadingTrivia.Count &&
-                        newLeadingTrivia[i].Kind() == SyntaxKind.EndOfLineTrivia)
+                        newLeadingTrivia[i].IsKind(SyntaxKind.EndOfLineTrivia))
                     {
                         newLeadingTrivia = newLeadingTrivia.RemoveAt(i);
 
                         if (i < newLeadingTrivia.Count &&
-                            newLeadingTrivia[i].Kind() == SyntaxKind.WhitespaceTrivia)
+                            newLeadingTrivia[i].IsKind(SyntaxKind.WhitespaceTrivia))
                         {
                             newLeadingTrivia = newLeadingTrivia.RemoveAt(i);
                         }

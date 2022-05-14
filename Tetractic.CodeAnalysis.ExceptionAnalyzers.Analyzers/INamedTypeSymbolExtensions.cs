@@ -19,8 +19,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             if (type.TypeKind == TypeKind.Class &&
                 otherType.TypeKind == TypeKind.Class)
             {
-                for (; type != null; type = type.BaseType)
-                    if (SymbolEqualityComparer.Default.Equals(type, otherType))
+                for (INamedTypeSymbol? tempType = type; tempType != null; tempType = tempType.BaseType)
+                    if (SymbolEqualityComparer.Default.Equals(tempType, otherType))
                         return true;
             }
 

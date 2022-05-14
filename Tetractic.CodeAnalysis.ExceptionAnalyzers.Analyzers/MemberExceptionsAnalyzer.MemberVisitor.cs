@@ -44,6 +44,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     if (variableSyntax.Initializer != null)
                     {
                         var symbol = SemanticModel.GetDeclaredSymbol(variableSyntax, CancellationToken);
+                        if (symbol == null)
+                            throw new UnreachableException();
 
                         Analyze(symbol, AccessorKind.Unspecified, fieldSyntax, variableSyntax.Initializer);
                     }
@@ -53,6 +55,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             public void Analyze(BaseMethodDeclarationSyntax baseMethodSyntax)
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(baseMethodSyntax, CancellationToken);
+                if (symbol == null)
+                    throw new UnreachableException();
 
                 var bodySyntax = (SyntaxNode?)baseMethodSyntax.Body ?? baseMethodSyntax.ExpressionBody;
 
@@ -62,6 +66,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             public void Analyze(BasePropertyDeclarationSyntax basePropertySyntax)
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(basePropertySyntax, CancellationToken);
+                if (symbol == null)
+                    throw new UnreachableException();
 
                 // Analyze expression body.
                 switch (basePropertySyntax.Kind())
@@ -108,6 +114,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             public void Analyze(ConstructorDeclarationSyntax constructorSyntax)
             {
                 var symbol = SemanticModel.GetDeclaredSymbol(constructorSyntax, CancellationToken);
+                if (symbol == null)
+                    throw new UnreachableException();
 
                 if (constructorSyntax.Initializer != null)
                 {
