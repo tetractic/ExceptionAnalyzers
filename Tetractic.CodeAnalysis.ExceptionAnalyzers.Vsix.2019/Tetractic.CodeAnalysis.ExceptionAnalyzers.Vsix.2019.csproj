@@ -19,6 +19,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="..\LICENSE.GPL-3.txt" Link="LICENSE.GPL-3.txt">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="..\LICENSE.txt" Link="LICENSE.txt">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
