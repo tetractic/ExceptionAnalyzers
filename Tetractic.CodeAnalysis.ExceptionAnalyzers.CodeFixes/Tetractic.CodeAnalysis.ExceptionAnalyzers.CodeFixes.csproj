@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
 
     <RootNamespace>Tetractic.CodeAnalysis.ExceptionAnalyzers</RootNamespace>
-    
+
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
