@@ -13,5 +13,5 @@ build_script:
 artifacts:
 - path: '**\*.nupkg'
   name: NuGet package
-- path: Tetractic.CodeAnalysis.ExceptionAnalyzers.Vsix.2019\bin\%configuration%\net472\ExceptionAnalyzers2019.vsix
-- path: Tetractic.CodeAnalysis.ExceptionAnalyzers.Vsix.2022\bin\%configuration%\net472\ExceptionAnalyzers2022.vsix
+- path: Tetractic.CodeAnalysis.ExceptionAnalyzers.Vsix.2019\**\*.vsix
+- path: Tetractic.CodeAnalysis.ExceptionAnalyzers.Vsix.2022\**\*.vsix
