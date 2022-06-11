@@ -403,7 +403,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             {
                                 catchTypes.Add(catchType);
                             }
-                            else if (declaration.Identifier != null)
+                            else if (declaration.Identifier != default)
                             {
                                 // The filter may define a set of exception types that
                                 // will be caught.
@@ -456,7 +456,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         if (catchTypeInfo.Type is INamedTypeSymbol catchType)
                         {
                             if (catchClause.Filter == null ||
-                                declaration.Identifier == null)
+                                declaration.Identifier == default)
                             {
                                 catchTypes.Add(catchType);
                             }
