@@ -182,13 +182,13 @@ dotnet_naming_rule.private_fields_rule.symbols = private_field_symbol
 dotnet_naming_rule.private_fields_rule.style = private_field_style
 
 dotnet_naming_symbols.non_private_field_symbol.applicable_kinds = field
-dotnet_naming_symbols.non_private_field_symbol.applicable_accessibilities = public,internal,friend,protected,protected_internal,protected_friend
+dotnet_naming_symbols.non_private_field_symbol.applicable_accessibilities = public,internal,protected,protected_internal,private_protected
 dotnet_naming_style.non_private_field_style.capitalization = pascal_case
 dotnet_naming_rule.non_private_fields_rule.severity = warning
 dotnet_naming_rule.non_private_fields_rule.symbols = non_private_field_symbol
 dotnet_naming_rule.non_private_fields_rule.style = non_private_field_style
 
-dotnet_naming_symbols.member_symbol.applicable_kinds = event,property,method
+dotnet_naming_symbols.member_symbol.applicable_kinds = event,property,method,local_function
 dotnet_naming_style.member_style.capitalization = pascal_case
 dotnet_naming_rule.members_rule.severity = warning
 dotnet_naming_rule.members_rule.symbols = member_symbol
