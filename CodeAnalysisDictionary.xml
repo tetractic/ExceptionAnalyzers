@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Dictionary>
+  <Words>
+    <Recognized>
+      <Word>accessor</Word>
+      <Word>cref</Word>
+      <Word>crefs</Word>
+      <Word>dequeue</Word>
+      <Word>enqueue</Word>
+      <Word>eol</Word>
+      <Word>infos</Word>
+      <Word>initializer</Word>
+      <Word>parameterless</Word>
+      <Word>rethrow</Word>
+      <Word>rethrown</Word>
+      <Word>supertype</Word>
+      <Word>tetractic</Word>
+    </Recognized>
+  </Words>
+</Dictionary>

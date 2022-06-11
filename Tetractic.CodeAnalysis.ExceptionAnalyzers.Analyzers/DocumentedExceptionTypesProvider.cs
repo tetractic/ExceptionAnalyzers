@@ -58,10 +58,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public bool TryGetExceptionAdjustments(ISymbol symbol, out ImmutableArray<MemberExceptionAdjustment> adjustments, CancellationToken cancellationToken)
         {
-            AdjustmentsInfo adustmentInfo;
-            if (TryGetExceptionAdjustments(symbol, out adustmentInfo, cancellationToken))
+            AdjustmentsInfo adjustmentInfo;
+            if (TryGetExceptionAdjustments(symbol, out adjustmentInfo, cancellationToken))
             {
-                adjustments = adustmentInfo.Adjustments;
+                adjustments = adjustmentInfo.Adjustments;
                 return true;
             }
 
@@ -514,7 +514,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     string entrySymbolId = entry.Key;
 
                     foreach (var entrySymbol in DocumentationCommentId.GetSymbolsForDeclarationId(entrySymbolId, Compilation))
-                        builder.Add(entrySymbol, new AdjustmentsInfo(entry.Value, hasCompiliationAdjustments: false));
+                        builder.Add(entrySymbol, new AdjustmentsInfo(entry.Value, hasCompilationAdjustments: false));
                 }
 
                 foreach (var entry in _adjustments)
@@ -530,7 +530,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         if (builder.TryGetValue(entrySymbol, out var oldValue))
                             adjustments = ExceptionAdjustments.ApplyAdjustments(oldValue.Adjustments, adjustments);
 
-                        builder[entrySymbol] = new AdjustmentsInfo(adjustments, hasCompiliationAdjustments: true);
+                        builder[entrySymbol] = new AdjustmentsInfo(adjustments, hasCompilationAdjustments: true);
                     }
                 }
 
@@ -547,10 +547,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             public readonly ImmutableArray<MemberExceptionAdjustment> Adjustments;
             public readonly bool HasCompilationAdjustments;
 
-            public AdjustmentsInfo(ImmutableArray<MemberExceptionAdjustment> adjustments, bool hasCompiliationAdjustments)
+            public AdjustmentsInfo(ImmutableArray<MemberExceptionAdjustment> adjustments, bool hasCompilationAdjustments)
             {
                 Adjustments = adjustments;
-                HasCompilationAdjustments = hasCompiliationAdjustments;
+                HasCompilationAdjustments = hasCompilationAdjustments;
             }
         }
     }

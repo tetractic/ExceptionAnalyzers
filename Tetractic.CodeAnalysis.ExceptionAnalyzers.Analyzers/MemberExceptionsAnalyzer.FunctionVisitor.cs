@@ -52,7 +52,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     _ = _symbolStack.Pop();
                 }
 
-                Debug.Assert(!TryDequeDeferred(out _, out _, out _, out _), "Local function visitor deferred analysis.");
+                Debug.Assert(!TryDequeueDeferred(out _, out _, out _, out _), "Local function visitor deferred analysis.");
             }
 
             public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)

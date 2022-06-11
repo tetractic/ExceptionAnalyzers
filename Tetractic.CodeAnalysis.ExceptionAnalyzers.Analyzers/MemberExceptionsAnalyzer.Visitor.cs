@@ -696,7 +696,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 _deferred.Enqueue((symbol, accessorKind, declarationSyntax, bodySyntax));
             }
 
-            protected bool TryDequeDeferred([NotNullWhen(true)] out ISymbol? symbol, out AccessorKind accessorKind, [NotNullWhen(true)] out SyntaxNode? declarationSyntax, out SyntaxNode? bodySyntax)
+            protected bool TryDequeueDeferred([NotNullWhen(true)] out ISymbol? symbol, out AccessorKind accessorKind, [NotNullWhen(true)] out SyntaxNode? declarationSyntax, out SyntaxNode? bodySyntax)
             {
                 if (_deferred is null || _deferred.Count == 0)
                 {

@@ -318,7 +318,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                     Visit(bodySyntax, Access.Get);
 
-                    if (!TryDequeDeferred(out _symbol!, out _accessorKind, out declarationSyntax!, out bodySyntax!))
+                    if (!TryDequeueDeferred(out _symbol!, out _accessorKind, out declarationSyntax!, out bodySyntax!))
                         break;
 
                     _ = TryGetDocumentedExceptionTypes(_symbol, out _documentedExceptionTypes);
