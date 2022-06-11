@@ -184,3 +184,4 @@ M:System.IO.Stream.Flush +T:System.ObjectDisposedException
 P:System.IO.Stream.Position set +T:System.ArgumentOutOfRangeException
 M:System.IO.Stream.ReadByte +T:System.IO.IOException
 M:System.IO.Stream.Seek(System.Int64,System.IO.SeekOrigin) +T:System.ArgumentException
+M:System.IO.Stream.SetLength(System.Int64) +T:System.ArgumentOutOfRangeException
