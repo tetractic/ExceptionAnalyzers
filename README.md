@@ -112,7 +112,7 @@ Each line of an exception adjustments file is either empty, a comment (beginning
  * `<accessor>` is the optional accessor of the member (ex. the `get` or `set` accessor of a property) to which the adjustment applies.  If the accessor is omitted, the adjustment is applied to all accessors.
  * `-` or `+` indicates removal or addition of the exception type, respectively.
  * `<exceptionTypeId>` is the ID of the exception type to add or remove.
- * The details of the ID format are found in the [C# language specification](https://github.com/dotnet/csharplang/blob/main/spec/documentation-comments.md#id-string-format).
+ * The details of the ID format are found in the [C# language specification](https://docs.microsoft.com/dotnet/csharp/language-reference/language-specification/documentation-comments#d42-id-string-format).
 
 Per-member adjustments are sourced from comments on the member:
 
