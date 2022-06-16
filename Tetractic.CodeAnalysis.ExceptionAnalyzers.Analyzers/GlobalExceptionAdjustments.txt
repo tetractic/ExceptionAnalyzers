@@ -180,6 +180,13 @@ P:System.Timers.Timer.Enabled get -T:System.ObjectDisposedException
 P:System.Xml.Serialization.XmlArrayItemAttribute.Form -T:System.Exception
 P:System.Xml.Serialization.XmlElementAttributes.Item(System.Int32) get -T:System.NotSupportedException
 
+P:System.Console.InputEncoding get -T:System.ArgumentNullException
+P:System.Console.InputEncoding get -T:System.IO.IOException
+P:System.Console.InputEncoding get -T:System.Security.SecurityException
+P:System.Console.OutputEncoding get -T:System.ArgumentNullException
+P:System.Console.OutputEncoding get -T:System.IO.IOException
+P:System.Console.OutputEncoding get -T:System.Security.SecurityException
+
 M:System.IO.Stream.Flush +T:System.ObjectDisposedException
 P:System.IO.Stream.Position set +T:System.ArgumentOutOfRangeException
 M:System.IO.Stream.ReadByte +T:System.IO.IOException
