@@ -154,6 +154,25 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         if (interfaceMemberSymbol.Kind != symbol.Kind)
                             continue;
 
+                        switch (interfaceMemberSymbol.Kind)
+                        {
+                            case SymbolKind.Event:
+                                var interfaceEventSymbol = (IEventSymbol)interfaceMemberSymbol;
+                                if (accessorKind == AccessorKind.Add && interfaceEventSymbol.AddMethod == null)
+                                    continue;
+                                if (accessorKind == AccessorKind.Remove && interfaceEventSymbol.RemoveMethod == null)
+                                    continue;
+                                break;
+
+                            case SymbolKind.Property:
+                                var interfacePropertySymbol = (IPropertySymbol)interfaceMemberSymbol;
+                                if (accessorKind == AccessorKind.Get && interfacePropertySymbol.GetMethod == null)
+                                    continue;
+                                if (accessorKind == AccessorKind.Set && interfacePropertySymbol.SetMethod == null)
+                                    continue;
+                                break;
+                        }
+
                         var implementationSymbol = symbol.ContainingType.FindImplementationForInterfaceMember(interfaceMemberSymbol);
                         if (implementationSymbol != null && SymbolEqualityComparer.Default.Equals(implementationSymbol, symbol))
                         {
