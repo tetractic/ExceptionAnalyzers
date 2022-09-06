@@ -484,7 +484,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     builder.Add(exceptionType);
 
             // Get from implemented symbol(s).
-            foreach (var interfaceSymbol in symbol.ContainingType.Interfaces)
+            foreach (var interfaceSymbol in symbol.ContainingType.AllInterfaces)
             {
                 foreach (var interfaceMemberSymbol in interfaceSymbol.GetMembers())
                 {

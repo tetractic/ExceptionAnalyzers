@@ -566,6 +566,31 @@ class C
         }
 
         [TestMethod]
+        public async Task InheritDocIndirectInterface()
+        {
+            var source = @"
+using System;
+
+interface I1
+{
+    /// <exception cref=""Exception""></exception>
+    void M();
+}
+
+interface I2 : I1
+{
+}
+
+class C : I2
+{
+    /// <inheritdoc/>
+    public void M() => throw new Exception();
+}";
+
+            await VerifyCS.VerifyAnalyzerAsync(source);
+        }
+
+        [TestMethod]
         public async Task ThrowingBclMethodCall()
         {
             var source = @"
