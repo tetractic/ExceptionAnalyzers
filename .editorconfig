@@ -9,7 +9,7 @@ indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-file_header_template = Copyright 2021 Carl Reinke\n\nThis file is part of a library that is licensed under the terms of GNU Lesser\nGeneral Public License version 3 as published by the Free Software\nFoundation.\n\nThis license does not grant rights under trademark law for use of any trade\nnames, trademarks, or service marks.
+file_header_template = Copyright 2021 Carl Reinke\n\nThis file is part of a library that is licensed under the terms of the GNU\nLesser General Public License Version 3 as published by the Free Software\nFoundation.\n\nThis license does not grant rights under trademark law for use of any trade\nnames, trademarks, or service marks.
 
 #### .NET Coding Conventions ####
 
