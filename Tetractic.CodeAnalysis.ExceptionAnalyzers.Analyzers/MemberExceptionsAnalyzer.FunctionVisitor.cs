@@ -57,7 +57,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
             {
-                // Do not analyze local function as part of the local function body.
+                // Don't analyze local function as part of the local function body.
             }
 
             public override void VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node)

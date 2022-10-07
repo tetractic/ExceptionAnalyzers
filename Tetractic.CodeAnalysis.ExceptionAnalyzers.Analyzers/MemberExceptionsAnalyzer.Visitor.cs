@@ -209,7 +209,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 {
                     if (symbol.Kind != SymbolKind.Method)
                     {
-                        Debug.Assert(false, $"Analyzing invocation expression but symbol kind is {symbol.Kind}.");
+                        Debug.Fail($"Analyzing invocation expression but symbol kind is {symbol.Kind}.");
                         return;
                     }
 
@@ -241,7 +241,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     EnqueueDeferred(symbol, AccessorKind.Unspecified, node, bodySyntax);
                 }
 
-                // Do not analyze local function as part of the member body.
+                // Don't analyze local function as part of the member body.
             }
 
             public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
@@ -934,7 +934,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                 return;
                             default:
 #if DEBUG
-                                Debug.Assert(false, $"Analyzing event symbol but access is {_accessScopes.Peek()}.");
+                                Debug.Fail($"Analyzing event symbol but access is {_accessScopes.Peek()}.");
 #endif
                                 return;
                         }
@@ -952,7 +952,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                 break;
                             default:
 #if DEBUG
-                                Debug.Assert(false, $"Analyzing method symbol but access is {_accessScopes.Peek()}.");
+                                Debug.Fail($"Analyzing method symbol but access is {_accessScopes.Peek()}.");
 #endif
                                 return;
                         }
@@ -974,7 +974,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                 break;
                             default:
 #if DEBUG
-                                Debug.Assert(false, $"Analyzing property symbol but access is {_accessScopes.Peek()}.");
+                                Debug.Fail($"Analyzing property symbol but access is {_accessScopes.Peek()}.");
 #endif
                                 return;
                         }

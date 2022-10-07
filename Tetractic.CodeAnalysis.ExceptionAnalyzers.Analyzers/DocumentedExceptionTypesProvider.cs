@@ -147,7 +147,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                 declaration = declaration.Parent;
                                 if (declaration == null)
                                 {
-                                    Debug.Assert(false, $"Expected event field variable declarator to have event field declaration ancestor.");
+                                    Debug.Fail($"Expected event field variable declarator to have event field declaration ancestor.");
                                     goto default;
                                 }
                             }
@@ -161,7 +161,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                 declaration = declaration.Parent;
                                 if (declaration == null)
                                 {
-                                    Debug.Assert(false, $"Expected field variable declarator to have field declaration ancestor.");
+                                    Debug.Fail($"Expected field variable declarator to have field declaration ancestor.");
                                     goto default;
                                 }
                             }
@@ -470,7 +470,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         GetInheritedDocumentedExceptionTypes(symbol, builder, propertySymbol.OverriddenProperty, cancellationToken);
                         break;
                     default:
-                        Debug.Assert(false, $"Inheriting documentation but symbol kind is {symbol.Kind}.");
+                        Debug.Fail($"Inheriting documentation but symbol kind is {symbol.Kind}.");
                         break;
                 }
             }
