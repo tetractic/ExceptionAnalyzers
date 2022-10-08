@@ -34,6 +34,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public void Analyze(IMethodSymbol symbol, SyntaxNode declarationSyntax, SyntaxNode? bodySyntax)
             {
+                // Iterator does not throw exceptions until enumeration.
+                if (SyntaxFacts2.HasYieldStatement(bodySyntax))
+                    return;
+
                 _symbolStack.Push(symbol);
                 try
                 {

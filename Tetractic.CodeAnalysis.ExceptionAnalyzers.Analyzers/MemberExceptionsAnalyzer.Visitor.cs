@@ -982,7 +982,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         var propertySymbol = (IPropertySymbol)symbol;
                         if (propertySymbol.SetMethod == null)
                         {
-                            // "ref"-returning get accessor.
+                            // "ref"-returning "get" accessor.
                             accessorKinds = AccessorKinds.Get;
                         }
                         break;

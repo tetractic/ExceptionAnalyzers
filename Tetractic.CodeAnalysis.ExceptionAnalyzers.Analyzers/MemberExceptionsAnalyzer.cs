@@ -50,6 +50,16 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 
+        public const string IteratorDiagnosticId = "Ex0105";
+
+        internal static readonly DiagnosticDescriptor IteratorRule = new DiagnosticDescriptor(
+            id: IteratorDiagnosticId,
+            title: "Iterator may throw unexpected exception during enumeration",
+            messageFormat: "Iterator may throw unexpected exception during enumeration: {0}",
+            category: "Design",
+            defaultSeverity: DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+
         public const string DelegateDiagnosticId = "Ex0120";
 
         internal static readonly DiagnosticDescriptor DelegateCreationRule = new DiagnosticDescriptor(
@@ -75,6 +85,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             Rule,
             AccessorRule,
             InitializerRule,
+            IteratorRule,
             DelegateCreationRule,
             AnonymousDelegateCreationRule,
             ExceptionAdjustmentsFileAnalyzer.SyntaxErrorRule,

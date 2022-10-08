@@ -283,5 +283,96 @@ class C
 
             await VerifyCS.VerifyAnalyzerAsync(source);
         }
+
+        [TestMethod]
+        public async Task ThrowUndocumentedInIteratorLocalFunctionBody()
+        {
+            var source = @"
+using System;
+using System.Collections;
+
+class C
+{
+    public void M()
+    {
+        F1();
+        F2();
+
+        IEnumerator F1()
+        {
+            yield return 0;
+            {|#0:throw new Exception();|}
+        }
+
+        /// <returns>An enumerator.</returns>
+        IEnumerator F2()
+        {
+            yield return 0;
+            {|#1:throw new Exception();|}
+        }
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0105").WithLocation(0).WithArguments("Exception"),
+                VerifyCS.Diagnostic("Ex0105").WithLocation(1).WithArguments("Exception"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task ThrowDocumentedOnLocalFunctionInIteratorLocalFunctionBody()
+        {
+            var source = @"
+using System;
+using System.Collections;
+
+class C
+{
+    public void M()
+    {
+        {|#0:F|}();
+
+        /// <exception cref=""Exception""></exception>
+        IEnumerator F()
+        {
+            yield return 0;
+            {|#1:throw new Exception();|}
+        }
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "Exception"),
+                VerifyCS.Diagnostic("Ex0105").WithLocation(1).WithArguments("Exception"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task ThrowDocumentedOnMoveNextInIteratorLocalFunctionBody()
+        {
+            var source = @"
+using System;
+using System.Collections;
+
+class C
+{
+    public void M()
+    {
+        F();
+
+        IEnumerator F()
+        {
+            yield return 0;
+            throw new InvalidOperationException();
+        }
+    }
+}";
+
+            await VerifyCS.VerifyAnalyzerAsync(source);
+        }
     }
 }

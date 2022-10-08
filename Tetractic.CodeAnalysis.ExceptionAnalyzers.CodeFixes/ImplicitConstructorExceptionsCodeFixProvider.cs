@@ -51,62 +51,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 var classDeclaration = node.AncestorsAndSelf().OfType<ClassDeclarationSyntax>().First();
 
-                var codeActions = exceptionTypeIdsAndTypes
-                    .Select(x =>
-                    {
-                        string exceptionTypeId = x.ExceptionTypeId;
-                        var exceptionType = x.ExceptionType;
-
-                        string exceptionName = exceptionType != null
-                            ? exceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
-                            : exceptionTypeId;
-
-                        return CodeAction.Create(
-                            title: $"Document '{exceptionName}' on constructor",
-                            createChangedDocument: async cancellationToken =>
-                            {
-                                string cref;
-                                if (exceptionType != null)
-                                {
-                                    var semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
-
-                                    cref = exceptionType.ToMinimalDisplayString(semanticModel, position: classDeclaration.OpenBraceToken.Span.End).Replace('<', '{').Replace('>', '}');
-                                }
-                                else
-                                {
-                                    cref = exceptionTypeId;
-                                }
-
-                                var constructorDeclaration = SyntaxFactory.ConstructorDeclaration(
-                                    attributeLists: default,
-                                    modifiers: SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)),
-                                    identifier: classDeclaration.Identifier,
-                                    parameterList: SyntaxFactory.ParameterList(),
-                                    initializer: default!,
-                                    body: SyntaxFactory.Block());
-
-                                constructorDeclaration = constructorDeclaration.WithLeadingTrivia(
-                                    Helpers.AddExceptionXmlElement(
-                                        constructorDeclaration.GetLeadingTrivia(),
-                                        cref,
-                                        accessor: null));
-
-                                var newClassDeclaration = classDeclaration.WithMembers(
-                                    classDeclaration.Members.Insert(0, constructorDeclaration));
-
-                                var newSyntaxRoot = syntaxRoot.ReplaceNode(classDeclaration, newClassDeclaration);
-
-                                return document.WithSyntaxRoot(newSyntaxRoot);
-                            },
-                            equivalenceKey: $"{classId} {exceptionTypeId}");
-                    })
-                    .ToImmutableArray();
-
                 context.RegisterCodeFix(
-                    CodeAction.Create(
-                        title: "Document exceptions on constructor",
-                        nestedActions: codeActions,
-                        isInlinable: true),
+                    GetDocumentationCodeAction(document, syntaxRoot, classDeclaration, classId, exceptionTypeIdsAndTypes),
                     diagnostic);
 
                 string throwerMemberId = diagnostic.Properties[ImplicitConstructorExceptionsAnalyzer.PropertyKeys.ThrowerMemberId]!;
@@ -117,6 +63,65 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     Helpers.GetRemovalAdjustmentCodeAction(document, throwerMemberId, throwerMember, null, exceptionTypeIdsAndTypes),
                     diagnostic);
             }
+        }
+
+        private static CodeAction GetDocumentationCodeAction(Document document, SyntaxNode syntaxRoot, ClassDeclarationSyntax classDeclaration, string classId, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
+        {
+            var codeActions = exceptionTypeIdsAndTypes
+                .Select(x =>
+                {
+                    string exceptionTypeId = x.ExceptionTypeId;
+                    var exceptionType = x.ExceptionType;
+
+                    string exceptionName = exceptionType != null
+                        ? exceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+                        : exceptionTypeId;
+
+                    return CodeAction.Create(
+                        title: $"Document '{exceptionName}' on constructor",
+                        createChangedDocument: async cancellationToken =>
+                        {
+                            string cref;
+                            if (exceptionType != null)
+                            {
+                                var semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
+
+                                cref = exceptionType.ToMinimalDisplayString(semanticModel, position: classDeclaration.OpenBraceToken.Span.End).Replace('<', '{').Replace('>', '}');
+                            }
+                            else
+                            {
+                                cref = exceptionTypeId;
+                            }
+
+                            var constructorDeclaration = SyntaxFactory.ConstructorDeclaration(
+                                attributeLists: default,
+                                modifiers: SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)),
+                                identifier: classDeclaration.Identifier,
+                                parameterList: SyntaxFactory.ParameterList(),
+                                initializer: default!,
+                                body: SyntaxFactory.Block());
+
+                            constructorDeclaration = constructorDeclaration.WithLeadingTrivia(
+                                Helpers.AddExceptionXmlElement(
+                                    constructorDeclaration.GetLeadingTrivia(),
+                                    cref,
+                                    accessor: null));
+
+                            var newClassDeclaration = classDeclaration.WithMembers(
+                                classDeclaration.Members.Insert(0, constructorDeclaration));
+
+                            var newSyntaxRoot = syntaxRoot.ReplaceNode(classDeclaration, newClassDeclaration);
+
+                            return document.WithSyntaxRoot(newSyntaxRoot);
+                        },
+                        equivalenceKey: $"{classId} {exceptionTypeId}");
+                })
+                .ToImmutableArray();
+
+            return CodeAction.Create(
+                title: "Document exceptions on constructor",
+                nestedActions: codeActions,
+                isInlinable: true);
         }
     }
 }

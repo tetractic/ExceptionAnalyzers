@@ -764,5 +764,71 @@ class C
             var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M2()", "Exception");
             await VerifyCS.VerifyAnalyzerAsync(source, expected);
         }
+
+        [TestMethod]
+        public async Task ThrowUndocumentedInIteratorMethodBody()
+        {
+            var source = @"
+using System;
+using System.Collections;
+
+class C
+{
+    public IEnumerator M()
+    {
+        yield return 0;
+        {|#0:throw new Exception();|}
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0105").WithLocation(0).WithArguments("Exception"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task ThrowDocumentedOnMethodInIteratorMethodBody()
+        {
+            var source = @"
+using System;
+using System.Collections;
+
+class C
+{
+    /// <exception cref=""Exception""></exception>
+    public IEnumerator M()
+    {
+        yield return 0;
+        {|#0:throw new Exception();|}
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0105").WithLocation(0).WithArguments("Exception"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task ThrowDocumentedOnMoveNextInIteratorMethodBody()
+        {
+            var source = @"
+using System;
+using System.Collections;
+
+class C
+{
+    public IEnumerator M()
+    {
+        yield return 0;
+        throw new InvalidOperationException();
+    }
+}";
+
+            await VerifyCS.VerifyAnalyzerAsync(source);
+        }
     }
 }

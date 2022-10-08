@@ -32,6 +32,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             private ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>> _localAdjustments = null!;
 
+            private ImmutableArray<DocumentedExceptionType> _iteratorDocumentedExceptionTypes;
+
+            private bool _isIterator;
+
             public MemberVisitor(SemanticModelAnalysisContext semanticModelContext, Context context)
                 : base(semanticModelContext, context)
             {
@@ -252,7 +256,15 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 string exceptionNames = string.Join(", ", exceptionTypes.Select(x => x.ToDisplayString(TypeDiagnosticDisplayFormat)));
 
-                if (_accessorKind == AccessorKind.Unspecified)
+                if (_isIterator)
+                {
+                    SemanticModelContext.ReportDiagnostic(Diagnostic.Create(
+                        descriptor: IteratorRule,
+                        location: SemanticModel.SyntaxTree.GetLocation(span),
+                        properties: properties,
+                        messageArgs: new[] { exceptionNames }));
+                }
+                else if (_accessorKind == AccessorKind.Unspecified)
                 {
                     if (_symbol.Kind == SymbolKind.Field ||
                         _symbol.Kind == SymbolKind.Property)
@@ -314,6 +326,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 for (; ; )
                 {
+                    // Iterator throws exceptions during enumeration.
+                    _isIterator = SyntaxFacts2.HasYieldStatement(bodySyntax);
+                    if (_isIterator)
+                        _documentedExceptionTypes = GetIteratorDocumentedExceptionTypes();
+
                     _localAdjustments = GetAdjustmentsFromComments(declarationSyntax);
 
                     Visit(bodySyntax, Access.Get);
@@ -323,6 +340,53 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                     _ = TryGetDocumentedExceptionTypes(_symbol, out _documentedExceptionTypes);
                 }
+            }
+
+            private ImmutableArray<DocumentedExceptionType> GetIteratorDocumentedExceptionTypes()
+            {
+                if (_iteratorDocumentedExceptionTypes.IsDefault)
+                {
+                    ImmutableArray<DocumentedExceptionType> documentedExceptionTypes;
+
+                    var moveNextSymbol = GetIEnumeratorMoveNextSymbol();
+                    if (moveNextSymbol == null ||
+                        !TryGetDocumentedExceptionTypes(moveNextSymbol, out documentedExceptionTypes))
+                    {
+                        // Because exceptions cannot be documented on the iterator, a hard-coded
+                        // list of exception types is provided if BCL documentation XML is 
+                        // unavailable (and there are no applicable exception adjustments).
+                        var corAssembly = Compilation.GetSpecialType(SpecialType.System_Enum).ContainingAssembly;
+                        var exceptionType = corAssembly?.GetTypeByMetadataName("System.InvalidOperationException");
+                        documentedExceptionTypes = exceptionType != null
+                            ? ImmutableArray.Create(new DocumentedExceptionType(exceptionType, AccessorKind.Unspecified))
+                            : ImmutableArray<DocumentedExceptionType>.Empty;
+                    }
+
+                    // Documented exception types need to be applicable to "get" accessor.
+                    _iteratorDocumentedExceptionTypes = documentedExceptionTypes.AddRange(documentedExceptionTypes
+                        .Where(x => x.AccessorKind == AccessorKind.Unspecified)
+                        .Select(x => new DocumentedExceptionType(x.ExceptionType, AccessorKind.Get)));
+                }
+                return _iteratorDocumentedExceptionTypes;
+            }
+
+            private IMethodSymbol? GetIEnumeratorMoveNextSymbol()
+            {
+                var typeSymbol = Compilation.GetSpecialType(SpecialType.System_Collections_IEnumerator);
+                foreach (var symbol in typeSymbol.GetMembers())
+                {
+                    if (symbol.Kind == SymbolKind.Method &&
+                        symbol.Name == WellKnownMemberNames.MoveNextMethodName)
+                    {
+                        var methodSymbol = (IMethodSymbol)symbol;
+                        if (methodSymbol.TypeArguments.Length == 0 &&
+                            methodSymbol.Parameters.Length == 0)
+                        {
+                            return methodSymbol;
+                        }
+                    }
+                }
+                return null;
             }
         }
     }

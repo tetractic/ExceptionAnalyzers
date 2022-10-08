@@ -24,6 +24,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             MemberExceptionsAnalyzer.DiagnosticId,
             MemberExceptionsAnalyzer.AccessorDiagnosticId,
+            MemberExceptionsAnalyzer.IteratorDiagnosticId,
         });
 
         public sealed override FixAllProvider? GetFixAllProvider() => null;
@@ -56,52 +57,12 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 var declaration = Helpers.GetMemberDeclarationSyntax(node)!;
 
-                var codeActions = exceptionTypeIdsAndTypes
-                    .Select(x =>
-                    {
-                        string exceptionTypeId = x.ExceptionTypeId;
-                        var exceptionType = x.ExceptionType;
-
-                        string exceptionName = exceptionType != null
-                            ? exceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
-                            : exceptionTypeId;
-
-                        return CodeAction.Create(
-                            title: $"Document '{exceptionName}'",
-                            createChangedDocument: async cancellationToken =>
-                            {
-                                string cref;
-                                if (exceptionType != null)
-                                {
-                                    var semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
-
-                                    cref = exceptionType.ToMinimalDisplayString(semanticModel, position: declaration.SpanStart).Replace('<', '{').Replace('>', '}');
-                                }
-                                else
-                                {
-                                    cref = exceptionTypeId;
-                                }
-
-                                var newDeclaration = declaration.WithLeadingTrivia(
-                                    Helpers.AddExceptionXmlElement(
-                                        declaration.GetLeadingTrivia(),
-                                        cref,
-                                        accessor));
-
-                                var newSyntaxRoot = syntaxRoot.ReplaceNode(declaration, newDeclaration);
-
-                                return document.WithSyntaxRoot(newSyntaxRoot);
-                            },
-                            equivalenceKey: $"{memberId} {accessor} {exceptionTypeId}");
-                    })
-                    .ToImmutableArray();
-
-                context.RegisterCodeFix(
-                    CodeAction.Create(
-                        title: "Document exceptions",
-                        nestedActions: codeActions,
-                        isInlinable: true),
-                    diagnostic);
+                if (diagnostic.Id != MemberExceptionsAnalyzer.IteratorDiagnosticId)
+                {
+                    context.RegisterCodeFix(
+                        GetDocumentationCodeAction(document, syntaxRoot, declaration, memberId, accessor, exceptionTypeIdsAndTypes),
+                        diagnostic);
+                }
 
                 string throwerMemberId;
                 if (diagnostic.Properties.TryGetValue(MemberExceptionsAnalyzer.PropertyKeys.ThrowerMemberId, out throwerMemberId!))
@@ -120,6 +81,54 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     }
                 }
             }
+        }
+
+        private static CodeAction GetDocumentationCodeAction(Document document, SyntaxNode syntaxRoot, SyntaxNode declaration, string? memberId, string? accessor, (string ExceptionTypeId, ISymbol ExceptionType)[] exceptionTypeIdsAndTypes)
+        {
+            var codeActions = exceptionTypeIdsAndTypes
+                .Select(x =>
+                {
+                    string exceptionTypeId = x.ExceptionTypeId;
+                    var exceptionType = x.ExceptionType;
+
+                    string exceptionName = exceptionType != null
+                        ? exceptionType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+                        : exceptionTypeId;
+
+                    return CodeAction.Create(
+                        title: $"Document '{exceptionName}'",
+                        createChangedDocument: async cancellationToken =>
+                        {
+                            string cref;
+                            if (exceptionType != null)
+                            {
+                                var semanticModel = (await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
+
+                                cref = exceptionType.ToMinimalDisplayString(semanticModel, position: declaration.SpanStart).Replace('<', '{').Replace('>', '}');
+                            }
+                            else
+                            {
+                                cref = exceptionTypeId;
+                            }
+
+                            var newDeclaration = declaration.WithLeadingTrivia(
+                                Helpers.AddExceptionXmlElement(
+                                    declaration.GetLeadingTrivia(),
+                                    cref,
+                                    accessor));
+
+                            var newSyntaxRoot = syntaxRoot.ReplaceNode(declaration, newDeclaration);
+
+                            return document.WithSyntaxRoot(newSyntaxRoot);
+                        },
+                        equivalenceKey: $"{memberId} {accessor} {exceptionTypeId}");
+                })
+                .ToImmutableArray();
+
+            return CodeAction.Create(
+                title: "Document exceptions",
+                nestedActions: codeActions,
+                isInlinable: true);
         }
     }
 }
