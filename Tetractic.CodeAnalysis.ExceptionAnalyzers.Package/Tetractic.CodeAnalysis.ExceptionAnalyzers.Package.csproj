@@ -12,7 +12,7 @@
     <PackageId>Tetractic.CodeAnalysis.ExceptionAnalyzers</PackageId>
     <Authors>Carl Reinke</Authors>
     <Description>Helps you check that exceptions are caught or documented in C#.</Description>
-    <Copyright>2021 Carl Reinke</Copyright>
+    <Copyright>© Carl Reinke</Copyright>
     <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/Tetractic/ExceptionAnalyzers</PackageProjectUrl>
