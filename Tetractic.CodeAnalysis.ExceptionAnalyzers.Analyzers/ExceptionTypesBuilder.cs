@@ -30,21 +30,21 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public int Capacity => _items.Length;
 
-        /// <exception cref="IndexOutOfRangeException" accessor="get"/>
-        /// <exception cref="IndexOutOfRangeException" accessor="set"/>
+        /// <exception cref="ArgumentOutOfRangeException" accessor="get"/>
+        /// <exception cref="ArgumentOutOfRangeException" accessor="set"/>
         public INamedTypeSymbol this[int index]
         {
             get
             {
                 if ((uint)index >= _count)
-                    throw new IndexOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(index));
 
                 return _items[index];
             }
             set
             {
                 if ((uint)index >= _count)
-                    throw new IndexOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(index));
 
                 _items[index] = value;
             }
