@@ -181,6 +181,7 @@ P:System.Xml.Serialization.XmlArrayItemAttribute.Form -T:System.Exception
 P:System.Xml.Serialization.XmlElementAttributes.Item(System.Int32) get -T:System.NotSupportedException
 
 P:System.Collections.Generic.IReadOnlyList`1.Item(System.Int32) get +T:System.ArgumentOutOfRangeException
+M:System.Collections.IEnumerator.Reset() +T:System.NotSupportedException
 
 P:System.Console.InputEncoding get -T:System.ArgumentNullException
 P:System.Console.InputEncoding get -T:System.IO.IOException
