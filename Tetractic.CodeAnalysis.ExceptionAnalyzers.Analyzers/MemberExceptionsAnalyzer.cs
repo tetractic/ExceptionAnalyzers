@@ -125,6 +125,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             var compilation = semanticModel.Compilation;
             var cancellationToken = semanticModelContext.CancellationToken;
 
+            // Analyzer requires documentation comments.
+            if (syntaxTree.Options.DocumentationMode == DocumentationMode.None)
+                return;
+
             var options = semanticModelContext.Options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
             var context = GetOrCreateContext(contextCache, options, documentedExceptionTypesProvider);
 

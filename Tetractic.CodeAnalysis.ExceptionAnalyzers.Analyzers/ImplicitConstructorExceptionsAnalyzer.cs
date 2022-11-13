@@ -84,6 +84,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             var syntaxReference = syntaxReferences[0];
             var syntaxTree = syntaxReference.SyntaxTree;
 
+            // Analyzer requires documentation comments.
+            if (syntaxTree.Options.DocumentationMode == DocumentationMode.None)
+                return;
+
             var options = symbolContext.Options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
             var context = GetOrCreateContext(contextCache, options, documentedExceptionTypesProvider);
 

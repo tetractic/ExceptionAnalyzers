@@ -73,6 +73,16 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             var symbol = symbolContext.Symbol;
 
+            var syntaxReferences = symbol.DeclaringSyntaxReferences;
+            if (syntaxReferences.Length == 0)
+                return;
+            var syntaxReference = syntaxReferences[0];
+            var syntaxTree = syntaxReference.SyntaxTree;
+
+            // Analyzer requires documentation comments.
+            if (syntaxTree.Options.DocumentationMode == DocumentationMode.None)
+                return;
+
             switch (symbol.Kind)
             {
                 case SymbolKind.Event:
