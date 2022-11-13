@@ -34,5 +34,30 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers.Test
             test.ExpectedDiagnostics.AddRange(expected);
             await test.RunAsync(CancellationToken.None);
         }
+
+        public static async Task VerifyAnalyzerWithAdditionalReferencedAssemblyAsync(string source, string additionalReferencedAssemblySource, params DiagnosticResult[] expected)
+        {
+            var test = new Test
+            {
+                TestCode = source,
+            };
+
+            string additionalAssemblyName = "AdditionalAssembly";
+
+            var additionalProject = new ProjectState(additionalAssemblyName, LanguageNames.CSharp, "Additional_", ".cs")
+            {
+                Sources =
+                {
+                    additionalReferencedAssemblySource,
+                },
+            };
+
+            test.TestState.AdditionalProjects.Add(additionalAssemblyName, additionalProject);
+
+            test.TestState.AdditionalProjectReferences.Add(additionalAssemblyName);
+
+            test.ExpectedDiagnostics.AddRange(expected);
+            await test.RunAsync(CancellationToken.None);
+        }
     }
 }

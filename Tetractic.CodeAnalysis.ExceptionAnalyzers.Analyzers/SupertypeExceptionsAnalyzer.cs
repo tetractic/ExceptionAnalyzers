@@ -12,6 +12,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 
 namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
@@ -128,7 +129,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 // Analyze overridden symbol.
                 if (overriddenSymbol != null)
                 {
-                    if (documentedExceptionTypesProvider.TryGetDocumentedExceptionTypes(overriddenSymbol, out var overriddenDocumentedExceptionTypes, cancellationToken))
+                    if (TryGetSupertypeMemberDocumentedExceptionTypes(overriddenSymbol, out var overriddenDocumentedExceptionTypes, cancellationToken))
                     {
                         foreach (var documentedExceptionType in documentedExceptionTypes)
                         {
@@ -185,7 +186,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         var implementationSymbol = symbol.ContainingType.FindImplementationForInterfaceMember(interfaceMemberSymbol);
                         if (implementationSymbol != null && SymbolEqualityComparer.Default.Equals(implementationSymbol, symbol))
                         {
-                            if (documentedExceptionTypesProvider.TryGetDocumentedExceptionTypes(interfaceMemberSymbol, out var implementedDocumentedExceptionTypes, cancellationToken))
+                            if (TryGetSupertypeMemberDocumentedExceptionTypes(interfaceMemberSymbol, out var implementedDocumentedExceptionTypes, cancellationToken))
                             {
                                 foreach (var documentedExceptionType in documentedExceptionTypes)
                                 {
@@ -216,6 +217,24 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
 
             builder?.Free();
+
+            bool TryGetSupertypeMemberDocumentedExceptionTypes(ISymbol symbol, out ImmutableArray<DocumentedExceptionType> documentedExceptionTypes, CancellationToken cancellationToken)
+            {
+                if (documentedExceptionTypesProvider.TryGetDocumentedExceptionTypes(symbol, out documentedExceptionTypes, cancellationToken))
+                    return true;
+
+                // If the supertype member is in the compilation then assume that undocumented means
+                // no exception types are thrown.  The user can document exception types on the
+                // supertype member if necessary.
+                if (SymbolEqualityComparer.Default.Equals(symbol.ContainingAssembly, symbolContext.Compilation.Assembly))
+                {
+                    documentedExceptionTypes = ImmutableArray<DocumentedExceptionType>.Empty;
+                    return true;
+                }
+
+                documentedExceptionTypes = default;
+                return false;
+            }
         }
 
         private static void ReportDiagnostic(SymbolAnalysisContext symbolContext, Location location, AccessorKind accessorKind, INamedTypeSymbol supertype, ISymbol supertypeMember, ImmutableArray<INamedTypeSymbol> exceptionTypes)

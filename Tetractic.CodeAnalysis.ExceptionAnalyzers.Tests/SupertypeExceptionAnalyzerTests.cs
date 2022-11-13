@@ -8,11 +8,55 @@
 // names, trademarks, or service marks.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Threading.Tasks;
+using VerifyCS = Tetractic.CodeAnalysis.ExceptionAnalyzers.Test.CSharpAnalyzerVerifier<
+    Tetractic.CodeAnalysis.ExceptionAnalyzers.SupertypeExceptionsAnalyzer>;
 
 namespace Tetractic.CodeAnalysis.ExceptionAnalyzers.Tests
 {
     [TestClass]
     public sealed partial class SupertypeExceptionAnalyzerTests
     {
+        [TestMethod]
+        public async Task SupertypeWithUndocumentedMemberInSameCompilation()
+        {
+            var source = @"
+using System;
+
+interface I
+{
+    void M();
+}
+
+class C : I
+{
+    /// <exception cref=""Exception""/>
+    public void {|#0:M|}() => throw new Exception();
+}";
+
+            var expected = VerifyCS.Diagnostic("Ex0200").WithLocation(0).WithArguments("M()", "I", "Exception");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task SupertypeWithUndocumentedMemberInDifferentCompilation()
+        {
+            var additionalReferencedAssemblySource = @"
+public interface I
+{
+    void M();
+}";
+
+            var source = @"
+using System;
+
+class C : I
+{
+    /// <exception cref=""Exception""/>
+    public void {|#0:M|}() => throw new Exception();
+}";
+
+            await VerifyCS.VerifyAnalyzerWithAdditionalReferencedAssemblyAsync(source, additionalReferencedAssemblySource);
+        }
     }
 }
