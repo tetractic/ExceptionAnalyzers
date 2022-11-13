@@ -793,6 +793,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             private bool AddFilterTypesFromIsExpressions(INamedTypeSymbol catchType, CatchClauseSyntax catchClause, ExceptionTypesBuilder catchTypes)
             {
                 var catchSymbol = SemanticModel.GetDeclaredSymbol(catchClause.Declaration!, CancellationToken);
+                if (catchSymbol is null)
+                    return false;
 
                 var expression = catchClause.Filter!.FilterExpression;
 
