@@ -170,8 +170,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     if (!originalExceptionType.HasBaseConversionTo(Context.IgnoredExceptionTypes) &&
                         !originalThrownExceptionType.IsSubsumedBy(documentedExceptionTypes))
                     {
-                        if (builder == null)
-                            builder = ExceptionTypesBuilder.Allocate();
+                        builder ??= ExceptionTypesBuilder.Allocate();
 
                         builder.Add(thrownExceptionType.ExceptionType);
                     }

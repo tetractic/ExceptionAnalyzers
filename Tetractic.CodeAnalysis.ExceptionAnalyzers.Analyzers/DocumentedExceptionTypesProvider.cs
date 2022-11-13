@@ -104,8 +104,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 if (TryGetExceptionAdjustments(symbol, out adjustmentInfo, cancellationToken) &&
                     !(builder == null && adjustmentInfo.HasCompilationAdjustments))
                 {
-                    if (builder == null)
-                        builder = DocumentedExceptionTypesBuilder.Allocate();
+                    builder ??= DocumentedExceptionTypesBuilder.Allocate();
 
                     ExceptionAdjustments.ApplyAdjustments(builder, adjustmentInfo.Adjustments, symbol, Compilation);
                 }
@@ -198,8 +197,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                             continue;
                     }
 
-                    if (builder == null)
-                        builder = DocumentedExceptionTypesBuilder.Allocate();
+                    builder ??= DocumentedExceptionTypesBuilder.Allocate();
 
                     var documentationComment = (DocumentationCommentTriviaSyntax?)trivia.GetStructure();
                     if (documentationComment == null)
@@ -241,8 +239,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                     var xmlCrefAttribute = (XmlCrefAttributeSyntax)xmlAttribute;
                                     var cref = xmlCrefAttribute.Cref;
 
-                                    if (semanticModel == null)
-                                        semanticModel = Compilation.GetSemanticModel(declaration.SyntaxTree, ignoreAccessibility: true);
+                                    semanticModel ??= Compilation.GetSemanticModel(declaration.SyntaxTree, ignoreAccessibility: true);
 
                                     crefSymbol = semanticModel.GetSymbolInfo(cref, cancellationToken).Symbol?.OriginalDefinition;
                                 }
@@ -270,8 +267,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                     var xmlCrefAttribute = (XmlCrefAttributeSyntax)xmlAttribute;
                                     var cref = xmlCrefAttribute.Cref;
 
-                                    if (semanticModel == null)
-                                        semanticModel = Compilation.GetSemanticModel(declaration.SyntaxTree, ignoreAccessibility: true);
+                                    semanticModel ??= Compilation.GetSemanticModel(declaration.SyntaxTree, ignoreAccessibility: true);
 
                                     crefSymbol = semanticModel.GetSymbolInfo(cref, cancellationToken).Symbol;
                                 }
@@ -437,8 +433,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             if (cref != null || crefSymbol != null)
             {
                 // Prevent infinite recursion.
-                if (symbolStack == null)
-                    symbolStack = new SymbolStack();
+                symbolStack ??= new SymbolStack();
                 symbolStack.Push(symbol);
                 try
                 {

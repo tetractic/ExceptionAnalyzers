@@ -95,8 +95,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 if (!documentedExceptionType.ExceptionType.HasBaseConversionTo(context.IgnoredExceptionTypes))
                 {
-                    if (builder == null)
-                        builder = ExceptionTypesBuilder.Allocate();
+                    builder ??= ExceptionTypesBuilder.Allocate();
 
                     builder.Add(documentedExceptionType.ExceptionType);
                 }

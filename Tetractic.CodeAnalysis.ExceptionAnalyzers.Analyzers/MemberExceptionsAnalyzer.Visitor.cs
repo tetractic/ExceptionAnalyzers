@@ -391,8 +391,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     var declaration = catchClause.Declaration;
                     if (declaration != null)
                     {
-                        if (catchTypes == null)
-                            catchTypes = ExceptionTypesBuilder.Allocate();
+                        catchTypes ??= ExceptionTypesBuilder.Allocate();
 
                         var catchTypeInfo = SemanticModel.GetTypeInfo(declaration.Type, CancellationToken);
                         if (catchTypeInfo.Type is INamedTypeSymbol catchType)
@@ -418,13 +417,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         if (catchClause.Filter == null ||
                             EvaluatesToTrue(catchClause.Filter.FilterExpression))
                         {
-                            if (generalCatchRethrowTypes == null)
-                                generalCatchRethrowTypes = ExceptionTypesBuilder.Allocate();
+                            generalCatchRethrowTypes ??= ExceptionTypesBuilder.Allocate();
                         }
                         else
                         {
-                            if (catchTypes == null)
-                                catchTypes = ExceptionTypesBuilder.Allocate();
+                            catchTypes ??= ExceptionTypesBuilder.Allocate();
                         }
                     }
                 }

@@ -127,8 +127,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                             if (!documentedExceptionType.IsSubsumedBy(overriddenDocumentedExceptionTypes))
                             {
-                                if (builder == null)
-                                    builder = ExceptionTypesBuilder.Allocate();
+                                builder ??= ExceptionTypesBuilder.Allocate();
 
                                 builder.Add(documentedExceptionType.ExceptionType);
                             }
@@ -185,8 +184,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                                     if (!documentedExceptionType.IsSubsumedBy(implementedDocumentedExceptionTypes))
                                     {
-                                        if (builder == null)
-                                            builder = ExceptionTypesBuilder.Allocate();
+                                        builder ??= ExceptionTypesBuilder.Allocate();
 
                                         builder.Add(documentedExceptionType.ExceptionType);
                                     }
