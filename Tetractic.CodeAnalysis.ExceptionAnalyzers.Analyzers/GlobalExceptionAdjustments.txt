@@ -192,6 +192,12 @@ P:System.Console.OutputEncoding get -T:System.Security.SecurityException
 
 M:System.IO.Stream.Flush +T:System.ObjectDisposedException
 P:System.IO.Stream.Position set +T:System.ArgumentOutOfRangeException
+M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.IO.IOException
+M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.NotSupportedException
+M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.ObjectDisposedException
 M:System.IO.Stream.ReadByte +T:System.IO.IOException
 M:System.IO.Stream.Seek(System.Int64,System.IO.SeekOrigin) +T:System.ArgumentException
 M:System.IO.Stream.SetLength(System.Int64) +T:System.ArgumentOutOfRangeException
+M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.IO.IOException
+M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.NotSupportedException
+M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.ObjectDisposedException
