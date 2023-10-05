@@ -114,6 +114,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return GetTypeSymbolsByDeclarationId(compilation, new[]
             {
                 "System.ArgumentException",
+                "System.DivideByZeroException",
                 "System.IndexOutOfRangeException",
                 "System.InvalidCastException",
                 "System.InvalidOperationException",
@@ -126,6 +127,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return GetTypeSymbolsByDeclarationId(compilation, new[]
             {
                 "System.ArgumentException",
+                "System.DivideByZeroException",
                 "System.IndexOutOfRangeException",
                 "System.InvalidCastException",
                 "System.Collections.Generic.KeyNotFoundException",

@@ -67,7 +67,7 @@ For example, it should be possible to avoid providing unacceptable arguments tha
 
 Setting name: `dotnet_intransitive_exceptions`\
 Value: A comma-separated list of fully-qualified type names.\
-Default value: `System.ArgumentException, System.IndexOutOfRangeException, System.InvalidCastException, System.InvalidOperationException, System.Collections.Generic.KeyNotFoundException`
+Default value: `System.ArgumentException, System.DivideByZeroException, System.IndexOutOfRangeException, System.InvalidCastException, System.InvalidOperationException, System.Collections.Generic.KeyNotFoundException`
 
 #### dotnet_intransitive_exceptions_private
 
@@ -75,7 +75,7 @@ Provides a list of exception types that will be ignored by exception analysis wh
 
 Setting name: `dotnet_intransitive_exceptions_private`\
 Value: A comma-separated list of fully-qualified type names.\
-Default value: `System.ArgumentException, System.IndexOutOfRangeException, System.InvalidCastException, System.Collections.Generic.KeyNotFoundException`
+Default value: `System.ArgumentException, System.DivideByZeroException, System.IndexOutOfRangeException, System.InvalidCastException, System.Collections.Generic.KeyNotFoundException`
 
 #### dotnet_intransitive_exceptions_internal
 
