@@ -1,8 +1,6 @@
 ﻿# Exception adjustments in this file are applied automatically to any project using Exception
 # Analyzers and should be limited to fixing up exception analysis of the BCL.
 
-M:System.Threading.CancellationToken.ThrowIfCancellationRequested $thrower -T:System.ObjectDisposedException
-
 P:System.ArraySegment`1.System#Collections#Generic#IList{T}#Item(System.Int32) get -T:System.NotSupportedException
 P:System.ArraySegment`1.System#Collections#Generic#IReadOnlyList{T}#Item(System.Int32) get -T:System.NotSupportedException
 P:System.Collections.ArrayList.Capacity get -T:System.ArgumentOutOfRangeException
@@ -180,6 +178,22 @@ P:System.Timers.Timer.Enabled get -T:System.ObjectDisposedException
 P:System.Xml.Serialization.XmlArrayItemAttribute.Form -T:System.Exception
 P:System.Xml.Serialization.XmlElementAttributes.Item(System.Int32) get -T:System.NotSupportedException
 
+M:System.ArgumentException.ThrowIfNullOrEmpty(System.String,System.String) +T:System.ArgumentException
+M:System.ArgumentException.ThrowIfNullOrWhiteSpace(System.String,System.String) +T:System.ArgumentException
+
+M:System.ArgumentNullException.ThrowIfNull(System.Object,System.String) +T:System.ArgumentNullException
+M:System.ArgumentNullException.ThrowIfNull(System.Void*,System.String) +T:System.ArgumentNullException
+
+M:System.ArgumentOutOfRangeException.ThrowIfEqual``1(``0,``0,System.String) +T:System.ArgumentOutOfRangeException
+M:System.ArgumentOutOfRangeException.ThrowIfGreaterThan``1(``0,``0,System.String) +T:System.ArgumentOutOfRangeException
+M:System.ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual``1(``0,``0,System.String) +T:System.ArgumentOutOfRangeException
+M:System.ArgumentOutOfRangeException.ThrowIfLessThan``1(``0,``0,System.String) +T:System.ArgumentOutOfRangeException
+M:System.ArgumentOutOfRangeException.ThrowIfLessThanOrEqual``1(``0,``0,System.String) +T:System.ArgumentOutOfRangeException
+M:System.ArgumentOutOfRangeException.ThrowIfNegative``1(``0,System.String) +T:System.ArgumentOutOfRangeException
+M:System.ArgumentOutOfRangeException.ThrowIfNegativeOrZero``1(``0,System.String) +T:System.ArgumentOutOfRangeException
+M:System.ArgumentOutOfRangeException.ThrowIfNotEqual``1(``0,``0,System.String) +T:System.ArgumentOutOfRangeException
+M:System.ArgumentOutOfRangeException.ThrowIfZero``1(``0,System.String) +T:System.ArgumentOutOfRangeException
+
 P:System.Collections.Generic.IReadOnlyList`1.Item(System.Int32) get +T:System.ArgumentOutOfRangeException
 M:System.Collections.IEnumerator.Reset() +T:System.NotSupportedException
 
@@ -201,3 +215,5 @@ M:System.IO.Stream.SetLength(System.Int64) +T:System.ArgumentOutOfRangeException
 M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.IO.IOException
 M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.NotSupportedException
 M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.ObjectDisposedException
+
+M:System.Threading.CancellationToken.ThrowIfCancellationRequested $thrower -T:System.ObjectDisposedException

@@ -8,9 +8,11 @@
 // names, trademarks, or service marks.
 
 using Microsoft.CodeAnalysis.Text;
+using System.Diagnostics;
 
 namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
+    [DebuggerDisplay("{GetDebuggerDisplay(),nq}")]
     internal readonly struct MemberExceptionAdjustment
     {
         public readonly string? Accessor;
@@ -47,6 +49,22 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             AccessorSpan = accessorSpan;
             FlagSpan = flagSpan;
             ExceptionTypeIdSpan = exceptionTypeIdSpan;
+        }
+
+        private string GetDebuggerDisplay()
+        {
+            string result = string.Empty;
+            if (Accessor != null)
+                result += $"{Accessor} ";
+            if (Flag != null)
+                result += $"${Flag} ";
+            result += Kind switch
+            {
+                ExceptionAdjustmentKind.Addition => "+",
+                ExceptionAdjustmentKind.Removal => "-",
+                _ => throw new UnreachableException()
+            };
+            return result + ExceptionTypeId;
         }
     }
 }

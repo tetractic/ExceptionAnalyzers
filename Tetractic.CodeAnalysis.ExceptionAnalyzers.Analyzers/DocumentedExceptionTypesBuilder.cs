@@ -14,6 +14,7 @@ using System.Diagnostics;
 
 namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
+    [DebuggerDisplay("Count = {Count}")]
     internal sealed class DocumentedExceptionTypesBuilder
     {
         private static readonly ObjectPool<DocumentedExceptionTypesBuilder> _pool = new ObjectPool(Environment.ProcessorCount * 3, 64);
