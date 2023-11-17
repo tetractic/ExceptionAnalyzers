@@ -99,15 +99,19 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 Visit(node.Left);
 
-                var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
-                if (symbol != null)
+                // Ignore operators that cannot be user-defined.
+                if (!node.OperatorToken.IsKind(SyntaxKind.QuestionQuestionToken))
                 {
-                    Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing binary expression but symbol kind is {symbol.Kind}.");
-                    Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.BuiltinOperator ||
-                                 ((IMethodSymbol)symbol).MethodKind == MethodKind.UserDefinedOperator, $"Analyzing binary expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
+                    var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
+                    if (symbol != null)
+                    {
+                        Debug.Assert(symbol.Kind == SymbolKind.Method, $"Analyzing binary expression but symbol kind is {symbol.Kind}.");
+                        Debug.Assert(((IMethodSymbol)symbol).MethodKind == MethodKind.BuiltinOperator ||
+                                     ((IMethodSymbol)symbol).MethodKind == MethodKind.UserDefinedOperator, $"Analyzing binary expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
 
-                    var span = node.OperatorToken.Span;
-                    HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
+                        var span = node.OperatorToken.Span;
+                        HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
+                    }
                 }
 
                 Visit(node.Right);
