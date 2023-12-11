@@ -155,6 +155,7 @@ P:System.Globalization.NumberFormatInfo.PerMilleSymbol get -T:System.InvalidOper
 P:System.Globalization.NumberFormatInfo.PositiveInfinitySymbol get -T:System.ArgumentNullException
 P:System.Globalization.NumberFormatInfo.PositiveInfinitySymbol get -T:System.InvalidOperationException
 P:System.Globalization.NumberFormatInfo.PositiveSign get -T:System.InvalidOperationException
+P:System.IO.Compression.ZipArchiveEntry.LastWriteTime get -T:System.NotSupportedException
 P:System.IO.FileSystemWatcher.NotifyFilter get -T:System.ComponentModel.InvalidEnumArgumentException
 P:System.IO.MemoryStream.Capacity get -T:System.ArgumentOutOfRangeException
 P:System.IO.MemoryStream.Position get -T:System.ArgumentOutOfRangeException
