@@ -217,4 +217,9 @@ M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.IO.IOExcept
 M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.NotSupportedException
 M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.ObjectDisposedException
 
+M:System.Net.Sockets.Socket.ConnectAsync(System.Net.EndPoint,System.Threading.CancellationToken) +T:System.OperationCanceledException
+M:System.Net.Sockets.Socket.ConnectAsync(System.Net.IPAddress,System.Int32,System.Threading.CancellationToken) +T:System.OperationCanceledException
+M:System.Net.Sockets.Socket.ConnectAsync(System.Net.IPAddress[],System.Int32,System.Threading.CancellationToken) +T:System.OperationCanceledException
+M:System.Net.Sockets.Socket.ConnectAsync(System.String,System.Int32,System.Threading.CancellationToken) +T:System.OperationCanceledException
+
 M:System.Threading.CancellationToken.ThrowIfCancellationRequested $thrower -T:System.ObjectDisposedException
