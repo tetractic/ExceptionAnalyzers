@@ -82,15 +82,61 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
             {
-                var access = node.Kind() switch
-                {
-                    SyntaxKind.SimpleAssignmentExpression => Access.Set,
-                    SyntaxKind.AddAssignmentExpression => Access.GetAndSetOrAdd,
-                    SyntaxKind.SubtractAssignmentExpression => Access.GetAndSetOrRemove,
-                    _ => Access.GetAndSet,
-                };
+                var access = node.Kind() == SyntaxKind.SimpleAssignmentExpression
+                    ? Access.Set
+                    : Access.GetAndSet;
 
                 Visit(node.Left, access);
+
+                // Ignore operators that cannot be user-defined.
+                if (!node.OperatorToken.IsKind(SyntaxKind.QuestionQuestionEqualsToken))
+                {
+                    var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
+                    if (symbol != null)
+                    {
+                        if (symbol.Kind == SymbolKind.Method)
+                        {
+                            var methodSymbol = (IMethodSymbol)symbol;
+                            switch (methodSymbol.MethodKind)
+                            {
+                                case MethodKind.EventAdd:
+                                case MethodKind.EventRemove:
+                                {
+                                    var accessorKinds = methodSymbol.MethodKind switch
+                                    {
+                                        MethodKind.EventAdd => AccessorKinds.Add,
+                                        MethodKind.EventRemove => AccessorKinds.Remove,
+                                        _ => throw new UnreachableException(),
+                                    };
+
+                                    symbol = SemanticModel.GetSymbolInfo(node.Left, CancellationToken).Symbol;
+                                    if (symbol != null)
+                                    {
+                                        Debug.Assert(symbol.Kind == SymbolKind.Event, $"Analyzing event add/remove accessor but symbol kind was {symbol.Kind}.");
+
+                                        var span = node.OperatorToken.Span;
+                                        HandleThrownExceptionTypes(span, symbol, accessorKinds);
+                                    }
+                                    break;
+                                }
+
+                                default:
+                                {
+                                    Debug.Assert(methodSymbol.MethodKind == MethodKind.BuiltinOperator ||
+                                                 methodSymbol.MethodKind == MethodKind.UserDefinedOperator, $"Analyzing binary expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
+
+                                    var span = node.OperatorToken.Span;
+                                    HandleThrownExceptionTypes(span, symbol, AccessorKinds.Unspecified);
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Debug.Fail($"Analyzing binary expression but symbol kind is {symbol.Kind}.");
+                        }
+                    }
+                }
 
                 Visit(node.Right, Access.Get);
             }
@@ -211,24 +257,29 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var symbol = SemanticModel.GetSymbolInfo(node, CancellationToken).Symbol;
                 if (symbol != null)
                 {
-                    if (symbol.Kind != SymbolKind.Method)
+                    if (symbol.Kind == SymbolKind.Method)
                     {
-                        Debug.Fail($"Analyzing invocation expression but symbol kind is {symbol.Kind}.");
-                        return;
-                    }
+                        var methodSymbol = (IMethodSymbol)symbol;
+                        if (methodSymbol.MethodKind == MethodKind.DelegateInvoke)
+                        {
+                            Visit(node.Expression, Access.Get);
 
-                    var methodSymbol = (IMethodSymbol)symbol;
-                    if (methodSymbol.MethodKind == MethodKind.DelegateInvoke)
-                    {
-                        Visit(node.Expression, Access.Get);
+                            var span = node.ArgumentList.OpenParenToken.Span;
+                            var delegateSymbol = methodSymbol.ContainingType;
+                            HandleThrownExceptionTypes(span, delegateSymbol, AccessorKinds.Unspecified);
+                        }
+                        else
+                        {
+                            Debug.Assert(methodSymbol.MethodKind == MethodKind.Ordinary ||
+                                         methodSymbol.MethodKind == MethodKind.ReducedExtension ||
+                                         methodSymbol.MethodKind == MethodKind.LocalFunction, $"Analyzing invocation expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");  // TODO
 
-                        var span = node.ArgumentList.OpenParenToken.Span;
-                        var delegateSymbol = methodSymbol.ContainingType;
-                        HandleThrownExceptionTypes(span, delegateSymbol, AccessorKinds.Unspecified);
+                            Visit(node.Expression, Access.Invoke);
+                        }
                     }
                     else
                     {
-                        Visit(node.Expression, Access.Invoke);
+                        Debug.Fail($"Analyzing invocation expression but symbol kind is {symbol.Kind}.");
                     }
                 }
 
@@ -926,22 +977,13 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         switch (_accessScopes.Peek())
                         {
                             case Access.Get:
-                                return;
-                            case Access.GetAndSetOrAdd:
-                                accessorKinds = AccessorKinds.Add;
-                                break;
-                            case Access.GetAndSetOrRemove:
-                                accessorKinds = AccessorKinds.Remove;
-                                break;
+                            case Access.GetAndSet:
                             case Access.Invoke:
                                 return;
                             default:
-#if DEBUG
                                 Debug.Fail($"Analyzing event symbol but access is {_accessScopes.Peek()}.");
-#endif
                                 return;
                         }
-                        break;
 
                     case SymbolKind.Method:
                         switch (_accessScopes.Peek())
@@ -954,9 +996,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                 accessorKinds = AccessorKinds.Unspecified;
                                 break;
                             default:
-#if DEBUG
                                 Debug.Fail($"Analyzing method symbol but access is {_accessScopes.Peek()}.");
-#endif
                                 return;
                         }
                         break;
@@ -971,14 +1011,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                 accessorKinds = AccessorKinds.Set;
                                 break;
                             case Access.GetAndSet:
-                            case Access.GetAndSetOrAdd:
-                            case Access.GetAndSetOrRemove:
                                 accessorKinds = AccessorKinds.Get | AccessorKinds.Set;
                                 break;
                             default:
-#if DEBUG
                                 Debug.Fail($"Analyzing property symbol but access is {_accessScopes.Peek()}.");
-#endif
                                 return;
                         }
 
@@ -1031,8 +1067,6 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 Get,
                 Set,
                 GetAndSet,
-                GetAndSetOrAdd,
-                GetAndSetOrRemove,
                 Invoke,
             }
         }

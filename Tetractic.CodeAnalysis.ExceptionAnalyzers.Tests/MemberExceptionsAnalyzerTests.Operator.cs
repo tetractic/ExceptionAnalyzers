@@ -349,6 +349,38 @@ class C
         }
 
         [DataTestMethod]
+        [DataRow("*")]
+        [DataRow("/")]
+        [DataRow("%")]
+        [DataRow("+")]
+        [DataRow("-")]
+        [DataRow("<<")]
+        [DataRow(">>")]
+        [DataRow("&")]
+        [DataRow("^")]
+        [DataRow("|")]
+        public async Task ThrowingCompoundBinaryOperatorCall(string op)
+        {
+            var source = @"
+using System;
+
+class C
+{
+    /// <exception cref=""Exception""></exception>
+    public static C operator " + op + @"(C c, int i) => throw new Exception();
+
+    public void M()
+    {
+        var c = new C();
+        c {|#0:" + op + @"=|} 1;
+    }
+}";
+
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "Exception");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [DataTestMethod]
         [DataRow("<", ">")]
         [DataRow(">", "<")]
         [DataRow("<=", ">=")]
