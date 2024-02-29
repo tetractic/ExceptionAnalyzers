@@ -21,7 +21,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
     {
         public const string DefaultFileName = "ExceptionAdjustments.txt";
 
-        private const string _filenamePrefix = "ExceptionAdjustments";
+        private const string _filenamePrefix = "ExceptionAdjustments.";
 
         private const string _filenameSuffix = ".txt";
 
