@@ -34,7 +34,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public static ExceptionAdjustmentsFile Load(AdditionalText file, CancellationToken cancellationToken)
         {
-            return _cache.GetValue(file, _ => Load(file.GetText(cancellationToken), file.Path));
+            var text = file.GetText(cancellationToken);
+            if (text is null)
+                return new ExceptionAdjustmentsFile(ImmutableDictionary<string, ImmutableArray<MemberExceptionAdjustment>>.Empty, ImmutableArray<Diagnostic>.Empty);
+
+            return _cache.GetValue(file, _ => Load(text, file.Path));
         }
 
         public static ExceptionAdjustmentsFile Load(SourceText text, string? filePath = null)
@@ -58,7 +62,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 if (!TryParseAdjustment(line, textLine.Span, ReportDiagnostic, out symbolId, out adjustment))
                     continue;
 
-                List<MemberExceptionAdjustment> adjustments;
+                List<MemberExceptionAdjustment>? adjustments;
                 if (!mutableBuilder.TryGetValue(symbolId, out adjustments))
                 {
                     adjustments = new List<MemberExceptionAdjustment>();

@@ -87,7 +87,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                                             if (xmlReader.NodeType == XmlNodeType.Element &&
                                                 xmlReader.Name == "member")
                                             {
-                                                string name = xmlReader.GetAttribute("name");
+                                                string? name = xmlReader.GetAttribute("name");
                                                 if (name != null)
                                                 {
                                                     if (!xmlReader.IsEmptyElement)

@@ -228,7 +228,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
         {
             using (var stream = typeof(ExceptionAdjustments).Assembly.GetManifestResourceStream("Tetractic.CodeAnalysis.ExceptionAnalyzers.GlobalExceptionAdjustments.txt"))
             {
-                var text = SourceText.From(stream);
+                var text = SourceText.From(stream!);
 
                 var adjustmentsFile = ExceptionAdjustmentsFile.Load(text);
 

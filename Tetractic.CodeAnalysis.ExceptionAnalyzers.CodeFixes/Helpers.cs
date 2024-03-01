@@ -288,7 +288,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             foreach (var additionalDocument in project.AdditionalDocuments)
             {
-                if (!ExceptionAdjustments.IsFileName(Path.GetFileName(additionalDocument.FilePath)))
+                if (additionalDocument.FilePath is null || !ExceptionAdjustments.IsFileName(Path.GetFileName(additionalDocument.FilePath)))
                     continue;
 
                 var text = await additionalDocument.GetTextAsync(cancellationToken).ConfigureAwait(false);
