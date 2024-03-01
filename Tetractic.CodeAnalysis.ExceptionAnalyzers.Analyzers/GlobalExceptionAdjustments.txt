@@ -179,10 +179,6 @@ P:System.Timers.Timer.Enabled get -T:System.ObjectDisposedException
 P:System.Xml.Serialization.XmlArrayItemAttribute.Form -T:System.Exception
 P:System.Xml.Serialization.XmlElementAttributes.Item(System.Int32) get -T:System.NotSupportedException
 
-M:System.ArgumentException.ThrowIfNullOrEmpty(System.String,System.String) +T:System.ArgumentException
-M:System.ArgumentException.ThrowIfNullOrWhiteSpace(System.String,System.String) +T:System.ArgumentException
-
-M:System.ArgumentNullException.ThrowIfNull(System.Object,System.String) +T:System.ArgumentNullException
 M:System.ArgumentNullException.ThrowIfNull(System.Void*,System.String) +T:System.ArgumentNullException
 
 M:System.ArgumentOutOfRangeException.ThrowIfEqual``1(``0,``0,System.String) +T:System.ArgumentOutOfRangeException
@@ -196,7 +192,7 @@ M:System.ArgumentOutOfRangeException.ThrowIfNotEqual``1(``0,``0,System.String) +
 M:System.ArgumentOutOfRangeException.ThrowIfZero``1(``0,System.String) +T:System.ArgumentOutOfRangeException
 
 P:System.Collections.Generic.IReadOnlyList`1.Item(System.Int32) get +T:System.ArgumentOutOfRangeException
-M:System.Collections.IEnumerator.Reset() +T:System.NotSupportedException
+M:System.Collections.IEnumerator.Reset +T:System.NotSupportedException
 
 P:System.Console.InputEncoding get -T:System.ArgumentNullException
 P:System.Console.InputEncoding get -T:System.IO.IOException
