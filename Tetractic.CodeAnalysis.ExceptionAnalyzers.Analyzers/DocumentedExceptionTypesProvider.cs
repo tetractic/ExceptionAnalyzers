@@ -187,14 +187,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 foreach (var trivia in declaration.GetLeadingTrivia())
                 {
-                    switch (trivia.Kind())
+                    if (!(trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) ||
+                          trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)))
                     {
-                        case SyntaxKind.SingleLineDocumentationCommentTrivia:
-                        case SyntaxKind.MultiLineDocumentationCommentTrivia:
-                            break;
-
-                        default:
-                            continue;
+                        continue;
                     }
 
                     builder ??= DocumentedExceptionTypesBuilder.Allocate();

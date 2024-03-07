@@ -21,10 +21,9 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 foreach (var child in node.DescendantNodesAndSelf(IsNotFunctionOrExpression))
                 {
-                    switch (child.Kind())
+                    if (child.IsKind(SyntaxKind.YieldReturnStatement) ||
+                        child.IsKind(SyntaxKind.YieldBreakStatement))
                     {
-                        case SyntaxKind.YieldReturnStatement:
-                        case SyntaxKind.YieldBreakStatement:
                             return true;
                     }
                 }

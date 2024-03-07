@@ -82,7 +82,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
             {
-                var access = node.Kind() == SyntaxKind.SimpleAssignmentExpression
+                var access = node.IsKind(SyntaxKind.SimpleAssignmentExpression)
                     ? Access.Set
                     : Access.GetAndSet;
 
@@ -873,10 +873,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 bool complete = true;
 
-                while (expression.Kind() == SyntaxKind.ParenthesizedExpression)
+                while (expression.IsKind(SyntaxKind.ParenthesizedExpression))
                     expression = ((ParenthesizedExpressionSyntax)expression).Expression;
 
-                while (expression.Kind() == SyntaxKind.LogicalOrExpression)
+                while (expression.IsKind(SyntaxKind.LogicalOrExpression))
                 {
                     var orExpression = (BinaryExpressionSyntax)expression;
 
@@ -884,14 +884,14 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                     expression = orExpression.Left;
 
-                    while (expression.Kind() == SyntaxKind.ParenthesizedExpression)
+                    while (expression.IsKind(SyntaxKind.ParenthesizedExpression))
                         expression = ((ParenthesizedExpressionSyntax)expression).Expression;
                 }
 
-                if (expression.Kind() == SyntaxKind.IsExpression)
+                if (expression.IsKind(SyntaxKind.IsExpression))
                 {
                     var isExpression = (BinaryExpressionSyntax)expression;
-                    if (isExpression.Left.Kind() == SyntaxKind.IdentifierName &&
+                    if (isExpression.Left.IsKind(SyntaxKind.IdentifierName) &&
                         isExpression.Right is TypeSyntax)
                     {
                         var isIdentifierName = (IdentifierNameSyntax)isExpression.Left;
@@ -917,12 +917,12 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             /// <summary>
             /// Performs simple evaluation of logical-OR expressions.
             /// </summary>
-            private bool EvaluatesToTrue(ExpressionSyntax expression)
+            private static bool EvaluatesToTrue(ExpressionSyntax expression)
             {
-                while (expression.Kind() == SyntaxKind.ParenthesizedExpression)
+                while (expression.IsKind(SyntaxKind.ParenthesizedExpression))
                     expression = ((ParenthesizedExpressionSyntax)expression).Expression;
 
-                while (expression.Kind() == SyntaxKind.LogicalOrExpression)
+                while (expression.IsKind(SyntaxKind.LogicalOrExpression))
                 {
                     var orExpression = (BinaryExpressionSyntax)expression;
 
@@ -931,11 +931,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                     expression = orExpression.Left;
 
-                    while (expression.Kind() == SyntaxKind.ParenthesizedExpression)
+                    while (expression.IsKind(SyntaxKind.ParenthesizedExpression))
                         expression = ((ParenthesizedExpressionSyntax)expression).Expression;
                 }
 
-                return expression.Kind() == SyntaxKind.TrueLiteralExpression;
+                return expression.IsKind(SyntaxKind.TrueLiteralExpression);
             }
 
             private void VisitAnonymousFunctionExpression(AnonymousFunctionExpressionSyntax node, TextSpan span)

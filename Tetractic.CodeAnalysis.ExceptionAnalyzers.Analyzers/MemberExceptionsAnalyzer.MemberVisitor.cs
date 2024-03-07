@@ -74,24 +74,19 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     throw new UnreachableException();
 
                 // Analyze expression body.
-                switch (basePropertySyntax.Kind())
+                if (basePropertySyntax.IsKind(SyntaxKind.PropertyDeclaration))
                 {
-                    case SyntaxKind.PropertyDeclaration:
-                    {
-                        var propertySyntax = (PropertyDeclarationSyntax)basePropertySyntax;
-                        if (propertySyntax.ExpressionBody != null)
-                            Analyze(symbol, AccessorKind.Get, propertySyntax, propertySyntax.ExpressionBody);
-                        if (propertySyntax.Initializer != null)
-                            Analyze(symbol, AccessorKind.Unspecified, propertySyntax, propertySyntax.Initializer);
-                        break;
-                    }
-                    case SyntaxKind.IndexerDeclaration:
-                    {
-                        var indexerSyntax = (IndexerDeclarationSyntax)basePropertySyntax;
-                        if (indexerSyntax.ExpressionBody != null)
-                            Analyze(symbol, AccessorKind.Get, indexerSyntax, indexerSyntax.ExpressionBody);
-                        break;
-                    }
+                    var propertySyntax = (PropertyDeclarationSyntax)basePropertySyntax;
+                    if (propertySyntax.ExpressionBody != null)
+                        Analyze(symbol, AccessorKind.Get, propertySyntax, propertySyntax.ExpressionBody);
+                    if (propertySyntax.Initializer != null)
+                        Analyze(symbol, AccessorKind.Unspecified, propertySyntax, propertySyntax.Initializer);
+                }
+                else if (basePropertySyntax.IsKind(SyntaxKind.IndexerDeclaration))
+                {
+                    var indexerSyntax = (IndexerDeclarationSyntax)basePropertySyntax;
+                    if (indexerSyntax.ExpressionBody != null)
+                        Analyze(symbol, AccessorKind.Get, indexerSyntax, indexerSyntax.ExpressionBody);
                 }
 
                 // Analyze accessors.
