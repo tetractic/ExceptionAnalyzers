@@ -1,8 +1,8 @@
 <Project>
 
   <PropertyGroup>
-    <VersionPrefix>1.4.4</VersionPrefix>
-    <VersionSuffix></VersionSuffix>
+    <VersionPrefix>1.4.5</VersionPrefix>
+    <VersionSuffix>preview</VersionSuffix>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>$(VersionPrefix)</FileVersion>
     <InformationalVersion>$(VersionPrefix)</InformationalVersion>
