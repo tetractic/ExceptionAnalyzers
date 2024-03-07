@@ -93,12 +93,11 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
 
-            // TODO: RegisterAdditionalFileAction
-            context.RegisterCompilationAction(compilationContext =>
+            context.RegisterAdditionalFileAction(additionalFileContext =>
             {
-                var compilation = compilationContext.Compilation;
-                var additionalFiles = compilationContext.Options.AdditionalFiles;
-                var cancellationToken = compilationContext.CancellationToken;
+                var compilation = additionalFileContext.Compilation;
+                var additionalFiles = additionalFileContext.Options.AdditionalFiles;
+                var cancellationToken = additionalFileContext.CancellationToken;
 
                 foreach (var additionalFile in additionalFiles)
                 {
@@ -108,7 +107,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     var adjustmentsFile = ExceptionAdjustmentsFile.Load(additionalFile, cancellationToken);
 
                     foreach (var diagnostic in adjustmentsFile.Diagnostics)
-                        compilationContext.ReportDiagnostic(diagnostic);
+                        additionalFileContext.ReportDiagnostic(diagnostic);
 
                     SourceText? text = null;
 
@@ -124,7 +123,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                                 var symbolIdLineSpan = text.Lines.GetLinePositionSpan(adjustment.SymbolIdSpan);
 
-                                compilationContext.ReportDiagnostic(Diagnostic.Create(
+                                additionalFileContext.ReportDiagnostic(Diagnostic.Create(
                                     descriptor: SymbolRule,
                                     location: Location.Create(additionalFile.Path, adjustment.SymbolIdSpan, symbolIdLineSpan)));
                             }
@@ -136,7 +135,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                                 var exceptionTypeIdLineSpan = text.Lines.GetLinePositionSpan(adjustment.ExceptionTypeIdSpan);
 
-                                compilationContext.ReportDiagnostic(Diagnostic.Create(
+                                additionalFileContext.ReportDiagnostic(Diagnostic.Create(
                                     descriptor: SymbolRule,
                                     location: Location.Create(additionalFile.Path, adjustment.ExceptionTypeIdSpan, exceptionTypeIdLineSpan)));
                             }

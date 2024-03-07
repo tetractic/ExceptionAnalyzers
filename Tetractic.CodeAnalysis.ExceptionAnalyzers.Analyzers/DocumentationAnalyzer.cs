@@ -25,7 +25,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             messageFormat: "The compiler did not parse documentation comments, which are required for exception analysis",
             category: "Analysis",
             defaultSeverity: DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+            isEnabledByDefault: true,
+            customTags: WellKnownDiagnosticTags.CompilationEnd);
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(new[]
         {
