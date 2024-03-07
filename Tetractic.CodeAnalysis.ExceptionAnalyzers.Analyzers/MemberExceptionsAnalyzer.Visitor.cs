@@ -397,10 +397,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 base.VisitThrowExpression(node);
 
-                var thrownTypeInfo = SemanticModel.GetTypeInfo(node.Expression, CancellationToken);
-                if (thrownTypeInfo.Type is INamedTypeSymbol thrownType && thrownType.TypeKind != TypeKind.Error)
-                    if (!TryIgnoreOrAddCaughtExceptionType(thrownType, thrownType.OriginalDefinition))
-                        HandleUncaughtExceptionType(node.Span, null, default, thrownType);
+                HandleThrowExceptionTypes(node.Expression, node.Span);
             }
 
             public override void VisitThrowStatement(ThrowStatementSyntax node)
@@ -409,16 +406,15 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                 if (node.Expression != null)
                 {
-                    var thrownTypeInfo = SemanticModel.GetTypeInfo(node.Expression, CancellationToken);
-                    if (thrownTypeInfo.Type is INamedTypeSymbol thrownType && thrownType.TypeKind != TypeKind.Error)
-                        if (!TryIgnoreOrAddCaughtExceptionType(thrownType, thrownType.OriginalDefinition))
-                            HandleUncaughtExceptionType(node.Span, null, default, thrownType);
+                    HandleThrowExceptionTypes(node.Expression, node.Span);
                 }
                 else
                 {
                     if (_rethrowTypesScopes.Count > 0)
                     {
                         var rethrowTypes = _rethrowTypesScopes.Peek();
+
+                        Debug.Assert(_builder.Count == 0);
 
                         foreach (var rethrownType in rethrowTypes)
                             if (!TryIgnoreOrAddCaughtExceptionType(rethrownType, rethrownType.OriginalDefinition))
@@ -577,6 +573,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 while (enumerator.MoveNext())
                 {
                     var accessorKind = enumerator.Current;
+
+                    Debug.Assert(_builder.Count == 0);
 
                     foreach (var thrownExceptionType in thrownExceptionTypes)
                     {
@@ -819,6 +817,59 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     SemanticModelContext.ReportDiagnostic(Diagnostic.Create(
                         descriptor: descriptor,
                         Location.Create(node.SyntaxTree, span)));
+                }
+            }
+
+            private void HandleThrowExceptionTypes(ExpressionSyntax exceptionExpression, TextSpan span)
+            {
+                Debug.Assert(_builder.Count == 0);
+
+                AccumulateUncaughtTypes(exceptionExpression);
+
+                if (_builder.Count > 0)
+                {
+                    var uncaughtTypes = _builder.ToImmutable();
+                    _builder.Clear();
+
+                    HandleUncaughtExceptionTypes(span, null, default, uncaughtTypes);
+                }
+
+                void AccumulateUncaughtTypes(ExpressionSyntax exceptionExpression)
+                {
+                    var thrownTypeInfo = SemanticModel.GetTypeInfo(exceptionExpression, CancellationToken);
+
+                    var thrownTypeInfoType = thrownTypeInfo.Type;
+                    if (thrownTypeInfoType == null)
+                    {
+                        if (exceptionExpression.IsKind(SyntaxKind.ConditionalExpression))
+                        {
+                            var conditionalExpression = (ConditionalExpressionSyntax)exceptionExpression;
+
+                            AccumulateUncaughtTypes(conditionalExpression.WhenTrue);
+                            AccumulateUncaughtTypes(conditionalExpression.WhenFalse);
+
+                            return;
+                        }
+                        else if (exceptionExpression.IsKind(SyntaxKind.NullLiteralExpression))
+                        {
+                            return;
+                        }
+                        else if (exceptionExpression.IsKind(SyntaxKind.SwitchExpression))
+                        {
+                            var switchExpression = (SwitchExpressionSyntax)exceptionExpression;
+
+                            foreach (var arm in switchExpression.Arms)
+                                AccumulateUncaughtTypes(arm.Expression);
+
+                            return;
+                        }
+
+                        thrownTypeInfoType = thrownTypeInfo.ConvertedType;
+                    }
+
+                    if (thrownTypeInfoType is INamedTypeSymbol thrownType && thrownType.TypeKind != TypeKind.Error)
+                        if (!TryIgnoreOrAddCaughtExceptionType(thrownType, thrownType.OriginalDefinition))
+                            _builder.Add(thrownType);
                 }
             }
 

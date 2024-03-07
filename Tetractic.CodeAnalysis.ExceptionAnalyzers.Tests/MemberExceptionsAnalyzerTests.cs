@@ -308,6 +308,54 @@ class C
         }
 
         [TestMethod]
+        public async Task ThrowConditional()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M(bool x)
+    {
+        {|#0:throw x
+            ? new ArgumentException()
+            : new InvalidOperationException();|}
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M(bool)", "ArgumentException, InvalidOperationException"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task ThrowSwitch()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M(bool x)
+    {
+        {|#0:throw x switch
+        {
+            true => new ArgumentException(),
+            false => new InvalidOperationException(),
+        };|}
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M(bool)", "ArgumentException, InvalidOperationException"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
         public async Task ThrowIgnored()
         {
             var source = @"
