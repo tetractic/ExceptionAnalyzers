@@ -8,8 +8,6 @@
 // names, trademarks, or service marks.
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
@@ -31,7 +29,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             return new AccessorKindEnumerator(accessorKinds);
         }
 
-        public struct AccessorKindEnumerator : IEnumerator<AccessorKind>
+        public struct AccessorKindEnumerator
         {
             private AccessorKinds _accessorKinds;
 
@@ -43,13 +41,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 _accessorKind = default;
             }
 
-            public AccessorKind Current => _accessorKind;
-
-            object IEnumerator.Current => Current;
-
-            public void Dispose()
-            {
-            }
+            public readonly AccessorKind Current => _accessorKind;
 
             public bool MoveNext()
             {

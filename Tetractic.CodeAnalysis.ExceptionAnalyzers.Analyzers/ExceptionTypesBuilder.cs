@@ -118,7 +118,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 _index = -1;
             }
 
-            public INamedTypeSymbol Current => _collection[_index];
+            public readonly INamedTypeSymbol Current => _collection[_index];
 
             public bool MoveNext()
             {
