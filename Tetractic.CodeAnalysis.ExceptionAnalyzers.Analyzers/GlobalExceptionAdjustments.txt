@@ -201,6 +201,14 @@ P:System.Console.OutputEncoding get -T:System.ArgumentNullException
 P:System.Console.OutputEncoding get -T:System.IO.IOException
 P:System.Console.OutputEncoding get -T:System.Security.SecurityException
 
+M:System.IO.BinaryWriter.Write(System.ReadOnlySpan{System.Byte}) +T:System.IO.IOException
+M:System.IO.BinaryWriter.Write(System.ReadOnlySpan{System.Byte}) +T:System.ObjectDisposedException
+M:System.IO.BinaryWriter.Write(System.ReadOnlySpan{System.Char}) +T:System.IO.IOException
+M:System.IO.BinaryWriter.Write(System.ReadOnlySpan{System.Char}) +T:System.ObjectDisposedException
+M:System.IO.BinaryWriter.Write7BitEncodedInt(System.Int32) -T:System.IO.EndOfStreamException
+M:System.IO.BinaryWriter.Write7BitEncodedInt64(System.Int64) +T:System.IO.IOException
+M:System.IO.BinaryWriter.Write7BitEncodedInt64(System.Int64) +T:System.ObjectDisposedException
+
 M:System.IO.Stream.Flush +T:System.ObjectDisposedException
 P:System.IO.Stream.Position set +T:System.ArgumentOutOfRangeException
 M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.IO.IOException
