@@ -98,6 +98,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         {
                             SyntaxKind.GetAccessorDeclaration => AccessorKind.Get,
                             SyntaxKind.SetAccessorDeclaration => AccessorKind.Set,
+                            SyntaxKind.InitAccessorDeclaration => AccessorKind.Set,
                             SyntaxKind.AddAccessorDeclaration => AccessorKind.Add,
                             SyntaxKind.RemoveAccessorDeclaration => AccessorKind.Remove,
                             _ => AccessorKind.Unspecified,

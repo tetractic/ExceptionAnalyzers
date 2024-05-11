@@ -17,6 +17,16 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers.Tests
 {
     public partial class MemberExceptionsAnalyzerTests
     {
+        private const string _isExternalInitAttributeSource = @"
+namespace System.Runtime.CompilerServices
+{
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    internal static class IsExternalInit
+    {
+    }
+}";
+
         [TestMethod]
         public async Task ThrowInPropertyGetAccessorBody()
         {
@@ -168,6 +178,72 @@ class C
         set => throw new Exception();
     }
 }";
+
+            var expected = VerifyCS.Diagnostic("Ex0101").WithLocation(0).WithArguments("P", "set", "Exception");
+            await VerifyCS.VerifyCodeFixAsync(source, expected, fixedSource);
+        }
+
+        [TestMethod]
+        public async Task ThrowInPropertyInitAccessorBody()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public int P
+    {
+        init
+        {
+            {|#0:throw new Exception();|}
+        }
+    }
+}" + _isExternalInitAttributeSource;
+
+            var fixedSource = @"
+using System;
+
+class C
+{
+    /// <exception cref=""Exception"" accessor=""set""></exception>
+    public int P
+    {
+        init
+        {
+            throw new Exception();
+        }
+    }
+}" + _isExternalInitAttributeSource;
+
+            var expected = VerifyCS.Diagnostic("Ex0101").WithLocation(0).WithArguments("P", "set", "Exception");
+            await VerifyCS.VerifyCodeFixAsync(source, expected, fixedSource);
+        }
+
+        [TestMethod]
+        public async Task ThrowInPropertyInitAccessorExpressionBody()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public int P
+    {
+        init => {|#0:throw new Exception()|};
+    }
+}" + _isExternalInitAttributeSource;
+
+            var fixedSource = @"
+using System;
+
+class C
+{
+    /// <exception cref=""Exception"" accessor=""set""></exception>
+    public int P
+    {
+        init => throw new Exception();
+    }
+}" + _isExternalInitAttributeSource;
 
             var expected = VerifyCS.Diagnostic("Ex0101").WithLocation(0).WithArguments("P", "set", "Exception");
             await VerifyCS.VerifyCodeFixAsync(source, expected, fixedSource);
