@@ -214,6 +214,9 @@ P:System.IO.Stream.Position set +T:System.ArgumentOutOfRangeException
 M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.IO.IOException
 M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.NotSupportedException
 M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.ObjectDisposedException
+M:System.IO.Stream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.IO.IOException
+M:System.IO.Stream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.NotSupportedException
+M:System.IO.Stream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.ObjectDisposedException
 M:System.IO.Stream.ReadAtLeast(System.Span{System.Byte},System.Int32,System.Boolean) +T:System.IO.IOException
 M:System.IO.Stream.ReadAtLeast(System.Span{System.Byte},System.Int32,System.Boolean) +T:System.NotSupportedException
 M:System.IO.Stream.ReadAtLeast(System.Span{System.Byte},System.Int32,System.Boolean) +T:System.ObjectDisposedException
@@ -236,6 +239,9 @@ M:System.IO.Stream.SetLength(System.Int64) +T:System.ArgumentOutOfRangeException
 M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.IO.IOException
 M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.NotSupportedException
 M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.ObjectDisposedException
+M:System.IO.Stream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.IO.IOException
+M:System.IO.Stream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.NotSupportedException
+M:System.IO.Stream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.ObjectDisposedException
 
 M:System.IO.StreamReader.Peek +T:System.ObjectDisposedException
 M:System.IO.StreamReader.Read +T:System.ObjectDisposedException
