@@ -44,6 +44,22 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                         Debug.WriteLine($"Loading documentation XML: {xmlPath}");
 
+                        // If the path looks like a path to a reference assembly of a referenced
+                        // project then we may find the XML file in the parent directory instead.
+                        string? directoryPath = Path.GetDirectoryName(xmlPath);
+                        string? directoryName = Path.GetFileName(directoryPath);
+                        if ("ref".Equals(directoryName, StringComparison.OrdinalIgnoreCase) && !File.Exists(xmlPath))
+                        {
+                            directoryPath = Path.GetDirectoryName(directoryPath);
+                            if (directoryPath != null)
+                            {
+                                string xmlFileName = Path.GetFileName(xmlPath);
+                                xmlPath = Path.Combine(directoryPath, xmlFileName);
+
+                                Debug.WriteLine($"Loading documentation XML: {xmlPath}");
+                            }
+                        }
+
                         Stream stream;
                         try
                         {
