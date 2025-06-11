@@ -28,6 +28,8 @@ M:System.Collections.Immutable.ImmutableDictionary`2.Builder.Clear -T:System.Not
 P:System.Collections.Immutable.ImmutableDictionary`2.Builder.Item(`0) set -T:System.NotSupportedException
 M:System.Collections.Immutable.ImmutableDictionary`2.Builder.Remove(`0) -T:System.NotSupportedException
 M:System.Collections.Immutable.ImmutableDictionary`2.Builder.Remove(System.Collections.Generic.KeyValuePair{`0,`1}) -T:System.NotSupportedException
+M:System.Collections.Immutable.ImmutableHashSet`1.Builder.Clear -T:System.NotSupportedException
+M:System.Collections.Immutable.ImmutableHashSet`1.Builder.Remove(`0) -T:System.NotSupportedException
 P:System.Collections.ObjectModel.Collection`1.System#Collections#IList#Item(System.Int32) get -T:System.ArgumentException
 P:System.Collections.ObjectModel.ReadOnlyCollection`1.System#Collections#Generic#IList{T}#Item(System.Int32) get -T:System.NotSupportedException
 P:System.Collections.ObjectModel.ReadOnlyCollection`1.System#Collections#IList#Item(System.Int32) get -T:System.NotSupportedException
