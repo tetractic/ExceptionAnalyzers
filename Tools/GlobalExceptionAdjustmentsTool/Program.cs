@@ -66,8 +66,8 @@ internal static class Program
             [
                 @"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\",
                 @"C:\Program Files\dotnet\sdk\NuGetFallbackFolder\netstandard.library\2.0.3\build\netstandard2.0\ref",
-                @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.16\ref\net8.0\",
-                @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\9.0.5\ref\net9.0\",
+                @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\8.0.17\ref\net8.0\",
+                @"C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\9.0.6\ref\net9.0\",
             ];
 
             Check(paths);

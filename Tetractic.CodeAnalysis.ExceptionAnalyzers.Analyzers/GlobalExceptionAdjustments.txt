@@ -219,12 +219,14 @@ M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.ObjectDisposedExcept
 M:System.IO.Stream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.Stream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.NotSupportedException
 M:System.IO.Stream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.Stream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.Stream.ReadAtLeast(System.Span{System.Byte},System.Int32,System.Boolean) +T:System.IO.IOException
 M:System.IO.Stream.ReadAtLeast(System.Span{System.Byte},System.Int32,System.Boolean) +T:System.NotSupportedException
 M:System.IO.Stream.ReadAtLeast(System.Span{System.Byte},System.Int32,System.Boolean) +T:System.ObjectDisposedException
 M:System.IO.Stream.ReadAtLeastAsync(System.Memory{System.Byte},System.Int32,System.Boolean,System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.Stream.ReadAtLeastAsync(System.Memory{System.Byte},System.Int32,System.Boolean,System.Threading.CancellationToken) +T:System.NotSupportedException
 M:System.IO.Stream.ReadAtLeastAsync(System.Memory{System.Byte},System.Int32,System.Boolean,System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.Stream.ReadAtLeastAsync(System.Memory{System.Byte},System.Int32,System.Boolean,System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.Stream.ReadByte +T:System.IO.IOException
 M:System.IO.Stream.ReadExactly(System.Byte[],System.Int32,System.Int32) +T:System.IO.IOException
 M:System.IO.Stream.ReadExactly(System.Byte[],System.Int32,System.Int32) +T:System.ObjectDisposedException
@@ -233,9 +235,11 @@ M:System.IO.Stream.ReadExactly(System.Span{System.Byte}) +T:System.ObjectDispose
 M:System.IO.Stream.ReadExactlyAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.Stream.ReadExactlyAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken) +T:System.NotSupportedException
 M:System.IO.Stream.ReadExactlyAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.Stream.ReadExactlyAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.Stream.ReadExactlyAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.Stream.ReadExactlyAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.NotSupportedException
 M:System.IO.Stream.ReadExactlyAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.Stream.ReadExactlyAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.Stream.Seek(System.Int64,System.IO.SeekOrigin) +T:System.ArgumentException
 M:System.IO.Stream.SetLength(System.Int64) +T:System.ArgumentOutOfRangeException
 M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.IO.IOException
@@ -244,19 +248,20 @@ M:System.IO.Stream.Write(System.ReadOnlySpan{System.Byte}) +T:System.ObjectDispo
 M:System.IO.Stream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.Stream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.NotSupportedException
 M:System.IO.Stream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.Stream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.OperationCanceledException
 
 M:System.IO.StreamReader.Peek +T:System.ObjectDisposedException
 M:System.IO.StreamReader.Read +T:System.ObjectDisposedException
 M:System.IO.StreamReader.Read(System.Char[],System.Int32,System.Int32) +T:System.ObjectDisposedException
 M:System.IO.StreamReader.Read(System.Span{System.Char}) +T:System.ObjectDisposedException
 M:System.IO.StreamReader.ReadAsync(System.Char[],System.Int32,System.Int32) +T:System.IO.IOException
-M:System.IO.StreamReader.ReadAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.StreamReader.ReadAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.InvalidOperationException
+M:System.IO.StreamReader.ReadAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.StreamReader.ReadAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.ObjectDisposedException
 M:System.IO.StreamReader.ReadAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.StreamReader.ReadBlockAsync(System.Char[],System.Int32,System.Int32) +T:System.IO.IOException
-M:System.IO.StreamReader.ReadBlockAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.StreamReader.ReadBlockAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.InvalidOperationException
+M:System.IO.StreamReader.ReadBlockAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.StreamReader.ReadBlockAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.ObjectDisposedException
 M:System.IO.StreamReader.ReadBlockAsync(System.Memory{System.Char},System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.StreamReader.ReadLine +T:System.ObjectDisposedException
@@ -291,6 +296,7 @@ M:System.IO.StreamWriter.WriteAsync(System.Char[],System.Int32,System.Int32) +T:
 M:System.IO.StreamWriter.WriteAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.InvalidOperationException
 M:System.IO.StreamWriter.WriteAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.StreamWriter.WriteAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.StreamWriter.WriteAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.StreamWriter.WriteLine(System.ReadOnlySpan{System.Char}) +T:System.IO.IOException
 M:System.IO.StreamWriter.WriteLine(System.ReadOnlySpan{System.Char}) +T:System.ObjectDisposedException
 M:System.IO.StreamWriter.WriteLine(System.String) +T:System.IO.IOException
@@ -317,6 +323,7 @@ M:System.IO.StreamWriter.WriteLineAsync(System.Char[],System.Int32,System.Int32)
 M:System.IO.StreamWriter.WriteLineAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.InvalidOperationException
 M:System.IO.StreamWriter.WriteLineAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.StreamWriter.WriteLineAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.StreamWriter.WriteLineAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.StreamWriter.WriteLineAsync(System.String) +T:System.IO.IOException
 
 M:System.IO.TextWriter.Write(System.ReadOnlySpan{System.Char}) +T:System.IO.IOException
@@ -329,10 +336,12 @@ M:System.IO.TextWriter.WriteAsync(System.Char[],System.Int32,System.Int32) +T:Sy
 M:System.IO.TextWriter.WriteAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.InvalidOperationException
 M:System.IO.TextWriter.WriteAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.TextWriter.WriteAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.TextWriter.WriteAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.TextWriter.WriteAsync(System.String) +T:System.IO.IOException
 M:System.IO.TextWriter.WriteAsync(System.Text.StringBuilder,System.Threading.CancellationToken) +T:System.InvalidOperationException
 M:System.IO.TextWriter.WriteAsync(System.Text.StringBuilder,System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.TextWriter.WriteAsync(System.Text.StringBuilder,System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.TextWriter.WriteAsync(System.Text.StringBuilder,System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.TextWriter.WriteLine(System.ReadOnlySpan{System.Char}) +T:System.IO.IOException
 M:System.IO.TextWriter.WriteLine(System.ReadOnlySpan{System.Char}) +T:System.ObjectDisposedException
 M:System.IO.TextWriter.WriteLine(System.Text.StringBuilder) +T:System.IO.IOException
@@ -344,10 +353,12 @@ M:System.IO.TextWriter.WriteLineAsync(System.Char[],System.Int32,System.Int32) +
 M:System.IO.TextWriter.WriteLineAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.InvalidOperationException
 M:System.IO.TextWriter.WriteLineAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.TextWriter.WriteLineAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.TextWriter.WriteLineAsync(System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.TextWriter.WriteLineAsync(System.String) +T:System.IO.IOException
 M:System.IO.TextWriter.WriteLineAsync(System.Text.StringBuilder,System.Threading.CancellationToken) +T:System.InvalidOperationException
 M:System.IO.TextWriter.WriteLineAsync(System.Text.StringBuilder,System.Threading.CancellationToken) +T:System.IO.IOException
 M:System.IO.TextWriter.WriteLineAsync(System.Text.StringBuilder,System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.TextWriter.WriteLineAsync(System.Text.StringBuilder,System.Threading.CancellationToken) +T:System.OperationCanceledException
 
 M:System.Net.Sockets.Socket.ConnectAsync(System.Net.EndPoint,System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.Net.Sockets.Socket.ConnectAsync(System.Net.IPAddress,System.Int32,System.Threading.CancellationToken) +T:System.OperationCanceledException
