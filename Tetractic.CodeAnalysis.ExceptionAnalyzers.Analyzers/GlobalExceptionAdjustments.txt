@@ -173,6 +173,7 @@ P:System.Runtime.Serialization.SerializationInfo.FullTypeName get -T:System.Argu
 P:System.Security.Cryptography.AesManaged.Mode get -T:System.Security.Cryptography.CryptographicException
 P:System.Security.Cryptography.PasswordDeriveBytes.IterationCount get -T:System.ArgumentOutOfRangeException
 P:System.Text.Encoder.Fallback -T:System.Text.EncoderFallbackException
+P:System.Text.RegularExpressions.CaptureCollection.Item(System.Int32) get -T:System.NotSupportedException
 P:System.Threading.Tasks.ParallelOptions.MaxDegreeOfParallelism get -T:System.ArgumentOutOfRangeException
 P:System.Threading.Thread.CurrentCulture get -T:System.ArgumentNullException
 P:System.Threading.Thread.CurrentUICulture get -T:System.ArgumentException
