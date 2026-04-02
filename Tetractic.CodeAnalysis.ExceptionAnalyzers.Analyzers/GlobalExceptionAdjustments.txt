@@ -212,6 +212,22 @@ M:System.IO.BinaryWriter.Write7BitEncodedInt(System.Int32) -T:System.IO.EndOfStr
 M:System.IO.BinaryWriter.Write7BitEncodedInt64(System.Int64) +T:System.IO.IOException
 M:System.IO.BinaryWriter.Write7BitEncodedInt64(System.Int64) +T:System.ObjectDisposedException
 
+M:System.IO.FileInfo.AppendText +T:System.IO.IOException
+M:System.IO.FileInfo.AppendText +T:System.DirectoryNotFoundException
+M:System.IO.FileInfo.AppendText +T:System.UnauthorizedAccessException
+M:System.IO.FileInfo.Create +T:System.IO.IOException
+M:System.IO.FileInfo.Create +T:System.DirectoryNotFoundException
+M:System.IO.FileInfo.Create +T:System.UnauthorizedAccessException
+P:System.IO.FileInfo.Length get +T:System.UnauthorizedAccessException
+M:System.IO.FileInfo.Open(System.IO.FileStreamOptions) +T:System.IO.FileNotFoundException
+M:System.IO.FileInfo.Open(System.IO.FileStreamOptions) +T:System.IO.IOException
+M:System.IO.FileInfo.Open(System.IO.FileStreamOptions) +T:System.ArgumentNullException
+M:System.IO.FileInfo.Open(System.IO.FileStreamOptions) +T:System.DirectoryNotFoundException
+M:System.IO.FileInfo.Open(System.IO.FileStreamOptions) +T:System.NotSupportedException
+M:System.IO.FileInfo.Open(System.IO.FileStreamOptions) +T:System.UnauthorizedAccessException
+M:System.IO.FileInfo.Replace(System.String,System.String) +T:System.UnauthorizedAccessException
+M:System.IO.FileInfo.Replace(System.String,System.String,System.Boolean) +T:System.UnauthorizedAccessException
+
 M:System.IO.Stream.Flush +T:System.ObjectDisposedException
 P:System.IO.Stream.Position set +T:System.ArgumentOutOfRangeException
 M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.IO.IOException
