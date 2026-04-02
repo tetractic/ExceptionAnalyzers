@@ -230,6 +230,11 @@ M:System.IO.FileInfo.Replace(System.String,System.String,System.Boolean) +T:Syst
 
 M:System.IO.Stream.Flush +T:System.ObjectDisposedException
 P:System.IO.Stream.Position set +T:System.ArgumentOutOfRangeException
+M:System.IO.Stream.CopyToAsync(System.IO.Stream,System.Threading.CancellationToken) +T:System.ArgumentNullException
+M:System.IO.Stream.CopyToAsync(System.IO.Stream,System.Threading.CancellationToken) +T:System.NotSupportedException
+M:System.IO.Stream.CopyToAsync(System.IO.Stream,System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.Stream.CopyToAsync(System.IO.Stream,System.Threading.CancellationToken) +T:System.OperationCanceledException
+M:System.IO.Stream.CopyToAsync(System.IO.Stream,System.Int32,System.Threading.CancellationToken) +T:System.OperationCanceledException
 M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.IO.IOException
 M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.NotSupportedException
 M:System.IO.Stream.Read(System.Span{System.Byte}) +T:System.ObjectDisposedException
