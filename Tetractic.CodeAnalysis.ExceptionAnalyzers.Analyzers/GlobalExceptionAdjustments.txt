@@ -388,3 +388,16 @@ M:System.Net.Sockets.Socket.ConnectAsync(System.Net.IPAddress[],System.Int32,Sys
 M:System.Net.Sockets.Socket.ConnectAsync(System.String,System.Int32,System.Threading.CancellationToken) +T:System.OperationCanceledException
 
 M:System.Threading.CancellationToken.ThrowIfCancellationRequested $thrower -T:System.ObjectDisposedException
+
+P:System.Windows.Forms.Form.AutoSizeMode get -T:System.ComponentModel.InvalidEnumArgumentException
+P:System.Windows.Forms.Form.DialogResult get -T:System.ComponentModel.InvalidEnumArgumentException
+P:System.Windows.Forms.Form.FormBorderStyle get -T:System.ComponentModel.InvalidEnumArgumentException
+P:System.Windows.Forms.Form.MaximizedBounds get -T:System.ArgumentOutOfRangeException
+P:System.Windows.Forms.Form.MaximumSize get -T:System.ArgumentOutOfRangeException
+P:System.Windows.Forms.Form.MdiParent get -T:System.Exception
+P:System.Windows.Forms.Form.MinimumSize get -T:System.ArgumentOutOfRangeException
+P:System.Windows.Forms.Form.SizeGripStyle get -T:System.ComponentModel.InvalidEnumArgumentException
+P:System.Windows.Forms.Form.StartPosition get -T:System.ComponentModel.InvalidEnumArgumentException
+P:System.Windows.Forms.Form.Owner get -T:System.Exception
+P:System.Windows.Forms.Form.TopLevel get -T:System.Exception
+P:System.Windows.Forms.Form.WindowState get -T:System.ComponentModel.InvalidEnumArgumentException
