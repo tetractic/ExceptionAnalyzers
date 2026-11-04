@@ -228,6 +228,34 @@ M:System.IO.FileInfo.Open(System.IO.FileStreamOptions) +T:System.UnauthorizedAcc
 M:System.IO.FileInfo.Replace(System.String,System.String) +T:System.UnauthorizedAccessException
 M:System.IO.FileInfo.Replace(System.String,System.String,System.Boolean) +T:System.UnauthorizedAccessException
 
+M:System.IO.FileStream.CopyTo(System.IO.Stream,System.Int32) +T:System.ArgumentNullException
+M:System.IO.FileStream.CopyTo(System.IO.Stream,System.Int32) +T:System.ArgumentOutOfRangeException
+M:System.IO.FileStream.CopyTo(System.IO.Stream,System.Int32) +T:System.IO.IOException
+M:System.IO.FileStream.CopyTo(System.IO.Stream,System.Int32) +T:System.NotSupportedException
+M:System.IO.FileStream.CopyTo(System.IO.Stream,System.Int32) +T:System.ObjectDisposedException
+M:System.IO.FileStream.CopyToAsync(System.IO.Stream,System.Int32,System.Threading.CancellationToken) +T:System.ArgumentNullException
+M:System.IO.FileStream.CopyToAsync(System.IO.Stream,System.Int32,System.Threading.CancellationToken) +T:System.ArgumentOutOfRangeException
+M:System.IO.FileStream.CopyToAsync(System.IO.Stream,System.Int32,System.Threading.CancellationToken) +T:System.IO.IOException
+M:System.IO.FileStream.CopyToAsync(System.IO.Stream,System.Int32,System.Threading.CancellationToken) +T:System.NotSupportedException
+M:System.IO.FileStream.CopyToAsync(System.IO.Stream,System.Int32,System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.FileStream.Flush(System.Boolean) +T:System.IO.IOException
+M:System.IO.FileStream.Flush(System.Boolean) +T:System.ObjectDisposedException
+M:System.IO.FileStream.FlushAsync(System.Threading.CancellationToken) +T:System.IO.IOException
+M:System.IO.FileStream.Read(System.Span{System.Byte}) +T:System.IO.IOException
+M:System.IO.FileStream.Read(System.Span{System.Byte}) +T:System.NotSupportedException
+M:System.IO.FileStream.Read(System.Span{System.Byte}) +T:System.ObjectDisposedException
+M:System.IO.FileStream.ReadAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken) +T:System.IO.IOException
+M:System.IO.FileStream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.IO.IOException
+M:System.IO.FileStream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.NotSupportedException
+M:System.IO.FileStream.ReadAsync(System.Memory{System.Byte},System.Threading.CancellationToken) +T:System.ObjectDisposedException
+M:System.IO.FileStream.ReadByte +T:System.IO.IOException
+M:System.IO.FileStream.Write(System.ReadOnlySpan{System.Byte}) +T:System.NotSupportedException
+M:System.IO.FileStream.Write(System.ReadOnlySpan{System.Byte}) +T:System.ObjectDisposedException
+M:System.IO.FileStream.WriteAsync(System.Byte[],System.Int32,System.Int32,System.Threading.CancellationToken) +T:System.IO.IOException
+M:System.IO.FileStream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.IO.IOException
+M:System.IO.FileStream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.NotSupportedException
+M:System.IO.FileStream.WriteAsync(System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken) +T:System.ObjectDisposedException
+
 M:System.IO.Stream.Flush +T:System.ObjectDisposedException
 P:System.IO.Stream.Position set +T:System.ArgumentOutOfRangeException
 M:System.IO.Stream.CopyToAsync(System.IO.Stream,System.Threading.CancellationToken) +T:System.ArgumentNullException
