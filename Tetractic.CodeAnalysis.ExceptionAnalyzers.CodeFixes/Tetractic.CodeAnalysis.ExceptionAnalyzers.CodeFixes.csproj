@@ -32,11 +32,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.11.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Text.Analyzers" Version="3.3.4">
+    <PackageReference Include="Text.Analyzers" Version="5.6.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -47,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageDownload Include="Microsoft.NETCore.App.Ref" Version="[8.0.0]" />
+    <PackageDownload Include="Microsoft.NETCore.App.Ref" Version="[10.0.0]" />
   </ItemGroup>
 
 </Project>
