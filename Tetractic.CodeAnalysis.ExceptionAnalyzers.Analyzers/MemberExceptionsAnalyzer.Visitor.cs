@@ -36,7 +36,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             private readonly Stack<(ExceptionTypesBuilder? CatchTypes, ExceptionTypesBuilder? GeneralCatchRethrowTypes)> _catchTypesScopes;
 
             // Exception types declared on each enclosing "catch" clause.
-            private readonly Stack<ExceptionTypesBuilder> _rethrowTypesScopes;
+            private readonly Stack<ExceptionTypesBuilder?> _rethrowTypesScopes;
 
             private readonly ExceptionTypesBuilder _builder;
 
@@ -50,7 +50,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 Context = context;
                 _accessScopes = new Stack<Access>();
                 _catchTypesScopes = new Stack<(ExceptionTypesBuilder?, ExceptionTypesBuilder?)>();
-                _rethrowTypesScopes = new Stack<ExceptionTypesBuilder>();
+                _rethrowTypesScopes = new Stack<ExceptionTypesBuilder?>();
                 _builder = new ExceptionTypesBuilder();
             }
 
@@ -416,9 +416,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
                         Debug.Assert(_builder.Count == 0);
 
-                        foreach (var rethrownType in rethrowTypes)
-                            if (!TryIgnoreOrAddCaughtExceptionType(rethrownType, rethrownType.OriginalDefinition))
-                                _builder.Add(rethrownType);
+                        if (rethrowTypes != null)
+                            foreach (var rethrownType in rethrowTypes)
+                                if (!TryIgnoreOrAddCaughtExceptionType(rethrownType, rethrownType.OriginalDefinition))
+                                    _builder.Add(rethrownType);
 
                         if (_builder.Count > 0)
                         {
@@ -470,10 +471,6 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         {
                             generalCatchRethrowTypes ??= ExceptionTypesBuilder.Allocate();
                         }
-                        else
-                        {
-                            catchTypes ??= ExceptionTypesBuilder.Allocate();
-                        }
                     }
                 }
 
@@ -491,7 +488,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 {
                     Visit(catchClause.Filter);
 
-                    ExceptionTypesBuilder rethrowTypes;
+                    ExceptionTypesBuilder? rethrowTypes;
 
                     // Determine the exception types that were caught from the "try" block and may
                     // be rethrown in the "catch" block.
@@ -525,16 +522,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         // If there is no filter then otherwise-uncaught exception types caught from
                         // the "try" block may be rethrown; otherwise those exception types were
                         // considered uncaught and do not need to be reported again.
-                        if (generalCatchRethrowTypes != null)
-                        {
-                            rethrowTypes = generalCatchRethrowTypes;
-                        }
-                        else
-                        {
-                            catchTypes!.Clear();
-
-                            rethrowTypes = catchTypes;
-                        }
+                        rethrowTypes = generalCatchRethrowTypes;
                     }
 
                     _rethrowTypesScopes.Push(rethrowTypes);
