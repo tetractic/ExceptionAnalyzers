@@ -38,11 +38,9 @@ void Demo4(bool b)
         //  ~~~~~~~~~~~~~~~~~~~~~~
         //  Ex0100: 'Demo4(bool)' may throw undocumented exception: Exception
     }
-    catch (NotSupportedException)
+    catch (NotSupportedException ex)
     {
-        throw;
-    //  ~~~~~~
-    //  Ex0100: 'Demo4(bool)' may throw undocumented exception: NotSupportedException
+        Trace.WriteLine(ex);
     }
 }
 ```

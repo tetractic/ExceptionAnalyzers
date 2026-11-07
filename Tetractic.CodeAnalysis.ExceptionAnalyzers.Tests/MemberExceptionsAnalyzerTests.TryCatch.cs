@@ -99,11 +99,11 @@ class C
     {
         try
         {
-            throw new NotSupportedException();
+            {|#0:throw new NotSupportedException();|}
         }
         catch (NotSupportedException)
         {
-            {|#0:throw;|}
+            throw;
         }
     }
 }";
@@ -113,21 +113,22 @@ class C
         }
 
         [TestMethod]
-        public async Task TryCatchFiltered()
+        public async Task TryFilteredCatch()
         {
             var source = @"
 using System;
 
 class C
 {
+    public bool B => Environment.TickCount % 2 == 0;
+
     public void M()
     {
         try
         {
             {|#0:throw new NotSupportedException();|}
         }
-        catch (NotSupportedException ex)
-            when (ex != null)
+        catch (NotSupportedException ex) when (B)
         {
         }
     }
@@ -138,234 +139,24 @@ class C
         }
 
         [TestMethod]
-        public async Task TryCatchFilteredMatchingIsPattern()
+        public async Task TryFilteredCatchRethrow()
         {
             var source = @"
 using System;
 
 class C
 {
-    public void M()
-    {
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch (Exception ex)
-            when (ex is NotSupportedException)
-        {
-        }
+    public bool B => Environment.TickCount % 2 == 0;
 
-        try
-        {
-            throw new NotImplementedException();
-        }
-        catch (Exception ex)
-            when (ex is NotImplementedException ||
-                  ex is NotSupportedException)
-        {
-        }
-
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch (Exception ex)
-            when (ex is NotImplementedException ||
-                  ex is NotSupportedException)
-        {
-        }
-    }
-}";
-
-            await VerifyCS.VerifyAnalyzerAsync(source);
-        }
-
-        [TestMethod]
-        public async Task TryCatchFilteredMatchingIsPatternRethrow()
-        {
-            var source = @"
-using System;
-
-class C
-{
-    public void M()
-    {
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch (Exception ex)
-            when (ex is NotSupportedException)
-        {
-            {|#0:throw;|}
-        }
-
-        try
-        {
-            throw new NotImplementedException();
-        }
-        catch (Exception ex)
-            when (ex is NotImplementedException ||
-                  ex is NotSupportedException)
-        {
-            {|#1:throw;|}
-        }
-
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch (Exception ex)
-            when (ex is NotImplementedException ||
-                  ex is NotSupportedException)
-        {
-            {|#2:throw;|}
-        }
-    }
-}";
-
-            var expected = new[]
-            {
-                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException"),
-                VerifyCS.Diagnostic("Ex0100").WithLocation(1).WithArguments("M()", "NotImplementedException, NotSupportedException"),
-                VerifyCS.Diagnostic("Ex0100").WithLocation(2).WithArguments("M()", "NotImplementedException, NotSupportedException"),
-            };
-            await VerifyCS.VerifyAnalyzerAsync(source, expected);
-        }
-
-        [TestMethod]
-        public async Task TryCatchFilteredNonmatchingIsPattern()
-        {
-            var source = @"
-using System;
-
-class C
-{
-    public void M()
-    {
-        try
-        {
-            {|#0:throw new Exception();|}
-        }
-        catch (Exception ex)
-            when (ex is NotSupportedException)
-        {
-        }
-
-        try
-        {
-            {|#1:throw new NotImplementedException();|}
-        }
-        catch (Exception ex)
-            when (ex is NotSupportedException)
-        {
-        }
-    }
-}";
-
-            var expected = new[]
-            {
-                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "Exception"),
-                VerifyCS.Diagnostic("Ex0100").WithLocation(1).WithArguments("M()", "NotImplementedException"),
-            };
-            await VerifyCS.VerifyAnalyzerAsync(source, expected);
-        }
-
-        [TestMethod]
-        public async Task TryCatchFilteredPartialIsPattern()
-        {
-            var source = @"
-using System;
-
-class C
-{
-    public void M()
-    {
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch (Exception ex)
-            when (ex is NotSupportedException ||
-                  ex.HResult != 0)
-        {
-        }
-
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch (Exception ex)
-            when (ex is NotSupportedException ||
-                  (ex is NotImplementedException && ex.HResult != 0))
-        {
-        }
-    }
-}";
-
-            await VerifyCS.VerifyAnalyzerAsync(source);
-        }
-
-        [TestMethod]
-        public async Task TryCatchFilteredPartialIsPatternRethrow()
-        {
-            var source = @"
-using System;
-
-class C
-{
-    public void M()
-    {
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch (Exception ex)
-            when (ex is NotSupportedException ||
-                  ex.HResult != 0)
-        {
-            {|#0:throw;|}
-        }
-
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch (Exception ex)
-            when (ex is NotSupportedException ||
-                  (ex is NotImplementedException && ex.HResult != 0))
-        {
-            {|#1:throw;|}
-        }
-    }
-}";
-
-            var expected = new[]
-            {
-                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException, Exception"),
-                VerifyCS.Diagnostic("Ex0100").WithLocation(1).WithArguments("M()", "NotSupportedException, Exception"),
-            };
-            await VerifyCS.VerifyAnalyzerAsync(source, expected);
-        }
-
-        [TestMethod]
-        public async Task TryCatchFilteredInvalidIsPattern()
-        {
-            var source = @"
-using System;
-
-class C
-{
     public void M()
     {
         try
         {
             {|#0:throw new NotSupportedException();|}
         }
-        catch (NotImplementedException ex)
-            when (ex is NotSupportedException)
+        catch (NotSupportedException ex) when (B)
         {
+            throw;
         }
     }
 }";
@@ -434,62 +225,9 @@ class C
     {
         try
         {
-            throw new NotSupportedException();
+            {|#0:throw new NotSupportedException();|}
         }
         catch
-        {
-            {|#0:throw;|}
-        }
-    }
-}";
-
-            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException");
-            await VerifyCS.VerifyAnalyzerAsync(source, expected);
-        }
-
-        [TestMethod]
-        public async Task TryGeneralCatchFiltered()
-        {
-            var source = @"
-using System;
-
-class C
-{
-    public bool B => Environment.TickCount % 2 == 0;
-
-    public void M()
-    {
-        try
-        {
-            {|#0:throw new NotSupportedException();|}
-        }
-        catch when (B || false)
-        {
-        }
-    }
-}";
-
-            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException");
-            await VerifyCS.VerifyAnalyzerAsync(source, expected);
-        }
-
-        [TestMethod]
-        public async Task TryGeneralCatchFilteredRethrow()
-        {
-            var source = @"
-using System;
-
-class C
-{
-    public bool B => Environment.TickCount % 2 == 0;
-
-    public void M()
-    {
-        try
-        {
-            {|#0:throw new NotSupportedException();|}
-        }
-        catch when (B || false)
         {
             throw;
         }
@@ -501,7 +239,7 @@ class C
         }
 
         [TestMethod]
-        public async Task TryGeneralCatchFilteredTruePattern()
+        public async Task TryGeneralFilteredCatch()
         {
             var source = @"
 using System;
@@ -514,27 +252,20 @@ class C
     {
         try
         {
-            throw new NotSupportedException();
+            {|#0:throw new NotSupportedException();|}
         }
-        catch when (B || true)
-        {
-        }
-
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch when (true || B)
+        catch when (B)
         {
         }
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(source);
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
         }
 
         [TestMethod]
-        public async Task TryGeneralCatchFilteredTruePatternRethrow()
+        public async Task TryGeneralFilteredCatchRethrow()
         {
             var source = @"
 using System;
@@ -547,29 +278,16 @@ class C
     {
         try
         {
-            throw new NotSupportedException();
+            {|#0:throw new NotSupportedException();|}
         }
-        catch when (B || true)
+        catch when (B)
         {
-            {|#0:throw;|}
-        }
-
-        try
-        {
-            throw new NotSupportedException();
-        }
-        catch when (true || B)
-        {
-            {|#1:throw;|}
+            throw;
         }
     }
 }";
 
-            var expected = new[]
-            {
-                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException"),
-                VerifyCS.Diagnostic("Ex0100").WithLocation(1).WithArguments("M()", "NotSupportedException"),
-            };
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException");
             await VerifyCS.VerifyAnalyzerAsync(source, expected);
         }
 
@@ -623,6 +341,495 @@ class C
 }";
 
             await VerifyCS.VerifyAnalyzerAsync(source);
+        }
+
+        [TestMethod]
+        public async Task TryCatchRethrowInTryCatch()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M()
+    {
+        try
+        {
+            try
+            {
+                {|#0:throw new NotSupportedException();|}
+            }
+            catch (NotSupportedException)
+            {
+                throw;
+            }
+        }
+        catch (NotSupportedException)
+        {
+        }
+    }
+}";
+
+            await VerifyCS.VerifyAnalyzerAsync(source);
+        }
+
+        [TestMethod]
+        public async Task TryCatchRethrowInTryCatchRethrow()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M()
+    {
+        try
+        {
+            try
+            {
+                {|#0:throw new NotSupportedException();|}
+            }
+            catch (NotSupportedException)
+            {
+                throw;
+            }
+        }
+        catch (NotSupportedException)
+        {
+            throw;
+        }
+    }
+}";
+
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task TryFilteredCatchRethrowInTryCatchRethrow()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public bool B => Environment.TickCount % 2 == 0;
+
+    public void M()
+    {
+        try
+        {
+            try
+            {
+                {|#0:throw new NotSupportedException();|}
+            }
+            catch (NotSupportedException) when (B)
+            {
+                throw;
+            }
+        }
+        catch (NotSupportedException)
+        {
+            throw;
+        }
+    }
+}";
+
+            // TODO:
+            // It is unintuitive that there are two diagnostics at the same location.  One comes
+            // from the path where the the exception type passes the filter, so the exception type
+            // is caught but then it is rethrown and escapes to the outer "try", and the other comes
+            // from the path where the the exception type does not pass the filter, so the exception
+            // type escapes directly to the outer "try".  When this happens, the diagnostics are not
+            // necessarily identical; it is possible for the exception types to be different.
+            // Ideally there would be one diagnostic per location.  Or perhaps the rethrow location
+            // should be added to the diagnostic as an additional location.
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task TryCatchRethrowInTryFilteredCatchRethrow()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public bool B => Environment.TickCount % 2 == 0;
+
+    public void M()
+    {
+        try
+        {
+            try
+            {
+                {|#0:throw new NotSupportedException();|}
+            }
+            catch (NotSupportedException)
+            {
+                throw;
+            }
+        }
+        catch (NotSupportedException) when (B)
+        {
+            throw;
+        }
+    }
+}";
+
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task TryCatchRethrownInCatch()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M()
+    {
+        try
+        {
+            throw new NotSupportedException();
+        }
+        catch (NotSupportedException)
+        {
+            try
+            {
+                throw;
+            }
+            catch (NotSupportedException)
+            {
+            }
+        }
+    }
+}";
+
+            await VerifyCS.VerifyAnalyzerAsync(source);
+        }
+
+        [TestMethod]
+        public async Task TryCatchRethrownInCatchRethrow()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M()
+    {
+        try
+        {
+            {|#0:throw new NotSupportedException();|}
+        }
+        catch (NotSupportedException)
+        {
+            try
+            {
+                throw;
+            }
+            catch (NotSupportedException)
+            {
+                throw;
+            }
+        }
+    }
+}";
+
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task TryCatchRethrownInFilteredCatchRethrow()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public bool B => Environment.TickCount % 2 == 0;
+
+    public void M()
+    {
+        try
+        {
+            {|#0:throw new NotSupportedException();|}
+        }
+        catch (NotSupportedException) when (B)
+        {
+            try
+            {
+                throw;
+            }
+            catch (NotSupportedException)
+            {
+                throw;
+            }
+        }
+    }
+}";
+
+            // See comment above about two diagnostics at the same location.
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task TryFilteredCatchRethrownInCatchRethrow()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public bool B => Environment.TickCount % 2 == 0;
+
+    public void M()
+    {
+        try
+        {
+            {|#0:throw new NotSupportedException();|}
+        }
+        catch (NotSupportedException)
+        {
+            try
+            {
+                throw;
+            }
+            catch (NotSupportedException) when (B)
+            {
+                throw;
+            }
+        }
+    }
+}";
+
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task TryFilteredCatchRethrowNarrow()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M()
+    {
+        try
+        {
+            {|#0:throw new Exception();|}
+        }
+        catch (Exception ex) when (ex is ArithmeticException or NotSupportedException)
+        {
+            throw;
+        }
+        catch
+        {
+        }
+    }
+}";
+
+            var expected = VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "ArithmeticException, NotSupportedException");
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task TryCatchConsume()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    /// <exception cref=""OverflowException""></exception>
+    /// <exception cref=""NotSupportedException""></exception>
+    public void Throw()
+    {
+    }
+
+    public void M()
+    {
+        try
+        {
+            {|#0:Throw|}();
+        }
+        catch (OverflowException)
+        {
+        }
+
+        try
+        {
+            {|#1:Throw|}();
+        }
+        catch (OverflowException)
+        {
+        }
+        catch (ArithmeticException)
+        {
+            throw;
+        }
+
+        try
+        {
+            {|#2:Throw|}();
+        }
+        catch (ArithmeticException ex) when (ex is OverflowException)
+        {
+        }
+
+        try
+        {
+            {|#3:Throw|}();
+        }
+        catch (ArithmeticException ex) when (ex is OverflowException)
+        {
+        }
+        catch (OverflowException)
+        {
+            throw;
+        }
+        catch (ArithmeticException)
+        {
+            throw;
+        }
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M()", "NotSupportedException"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(1).WithArguments("M()", "NotSupportedException"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(2).WithArguments("M()", "NotSupportedException"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(3).WithArguments("M()", "NotSupportedException"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task TryCatchTypeArgument()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M<T>() where T : Exception
+    {
+        try
+        {
+            {|#0:throw new Exception();|}
+        }
+        catch (T ex)
+        {
+        }
+
+        try
+        {
+            {|#1:throw new Exception();|}
+        }
+        catch (T ex)
+        {
+            throw;
+        }
+        catch
+        {
+        }
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M<T>()", "Exception"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(1).WithArguments("M<T>()", "Exception"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
+        }
+
+        [TestMethod]
+        public async Task TryFilteredCatchTypeArgument()
+        {
+            var source = @"
+using System;
+
+class C
+{
+    public void M<T>() where T : Exception
+    {
+        try
+        {
+            {|#0:throw new Exception();|}
+        }
+        catch (T ex) when (ex is Exception)
+        {
+        }
+
+        try
+        {
+            {|#1:throw new Exception();|}
+        }
+        catch (T ex) when (ex is ArithmeticException)
+        {
+        }
+
+        try
+        {
+            {|#2:throw new Exception();|}
+        }
+        catch (T ex) when (ex is ArithmeticException)
+        {
+            throw;
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            {|#3:throw new Exception();|}
+        }
+        catch (T ex) when (ex is (ArithmeticException))
+        {
+        }
+
+        try
+        {
+            {|#4:throw new Exception();|}
+        }
+        catch (T ex) when (ex is (ArithmeticException))
+        {
+            throw;
+        }
+        catch
+        {
+        }
+    }
+}";
+
+            var expected = new[]
+            {
+                VerifyCS.Diagnostic("Ex0100").WithLocation(0).WithArguments("M<T>()", "Exception"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(1).WithArguments("M<T>()", "Exception"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(2).WithArguments("M<T>()", "Exception"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(3).WithArguments("M<T>()", "Exception"),
+                VerifyCS.Diagnostic("Ex0100").WithLocation(4).WithArguments("M<T>()", "Exception"),
+            };
+            await VerifyCS.VerifyAnalyzerAsync(source, expected);
         }
     }
 }

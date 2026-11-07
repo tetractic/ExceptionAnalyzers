@@ -29,18 +29,32 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
             protected readonly Context Context;
 
+            private static readonly TryScopePool _tryScopePool = new TryScopePool(Environment.ProcessorCount, 32);
+
             private readonly Stack<Access> _accessScopes;
 
-            // Exception types declared on "catch" clauses and exception types that could be caught
-            // by the general "catch" clause of each enclosing "try" block.
-            private readonly Stack<(ExceptionTypesBuilder? CatchTypes, ExceptionTypesBuilder? GeneralCatchRethrowTypes)> _catchTypesScopes;
+            /// <summary>
+            /// Information about exception types that may be thrown so far in each enclosing "try"
+            /// block.
+            /// </summary>
+            /// <remarks>
+            /// Information about exception types is added to the top list if the stack is not
+            /// empty.  The exception types are reported after analyzing the "try" block if not
+            /// caught or if caught and rethrown.
+            /// </remarks>
+            private readonly Stack<List<TryItem>> _tryScopes;
 
-            // Exception types declared on each enclosing "catch" clause.
-            private readonly Stack<ExceptionTypesBuilder?> _rethrowTypesScopes;
+            /// <summary>
+            /// Information about each enclosing "catch" clause, which is used when analyzing a
+            /// rethrow.
+            /// </summary>
+            private readonly Stack<CatchScope> _catchScopes;
 
             private readonly ExceptionTypesBuilder _builder;
 
             private FunctionVisitor? _functionVisitor;
+
+            private FilterEvaluator? _filterEvaluator;
 
             private Queue<(ISymbol Symbol, AccessorKind AccessorKind, SyntaxNode DeclarationSyntax, SyntaxNode? BodySyntax)>? _deferred;
 
@@ -49,8 +63,8 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 SemanticModelContext = semanticModelContext;
                 Context = context;
                 _accessScopes = new Stack<Access>();
-                _catchTypesScopes = new Stack<(ExceptionTypesBuilder?, ExceptionTypesBuilder?)>();
-                _rethrowTypesScopes = new Stack<ExceptionTypesBuilder?>();
+                _tryScopes = new Stack<List<TryItem>>();
+                _catchScopes = new Stack<CatchScope>();
                 _builder = new ExceptionTypesBuilder();
             }
 
@@ -272,7 +286,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         {
                             Debug.Assert(methodSymbol.MethodKind == MethodKind.Ordinary ||
                                          methodSymbol.MethodKind == MethodKind.ReducedExtension ||
-                                         methodSymbol.MethodKind == MethodKind.LocalFunction, $"Analyzing invocation expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");  // TODO
+                                         methodSymbol.MethodKind == MethodKind.LocalFunction, $"Analyzing invocation expression but method symbol kind was {((IMethodSymbol)symbol).MethodKind}.");
 
                             Visit(node.Expression, Access.Invoke);
                         }
@@ -397,7 +411,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             {
                 base.VisitThrowExpression(node);
 
-                HandleThrowExceptionTypes(node.Expression, node.Span);
+                HandleThrowExceptionTypes(node.Span, node.Expression);
             }
 
             public override void VisitThrowStatement(ThrowStatementSyntax node)
@@ -405,141 +419,208 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 base.VisitThrowStatement(node);
 
                 if (node.Expression != null)
-                {
-                    HandleThrowExceptionTypes(node.Expression, node.Span);
-                }
+                    HandleThrowExceptionTypes(node.Span, node.Expression);
                 else
-                {
-                    if (_rethrowTypesScopes.Count > 0)
-                    {
-                        var rethrowTypes = _rethrowTypesScopes.Peek();
-
-                        Debug.Assert(_builder.Count == 0);
-
-                        if (rethrowTypes != null)
-                            foreach (var rethrownType in rethrowTypes)
-                                if (!TryIgnoreOrAddCaughtExceptionType(rethrownType, rethrownType.OriginalDefinition))
-                                    _builder.Add(rethrownType);
-
-                        if (_builder.Count > 0)
-                        {
-                            var uncaughtTypes = _builder.ToImmutable();
-                            _builder.Clear();
-
-                            HandleUncaughtExceptionTypes(node.Span, null, default, uncaughtTypes);
-                        }
-                    }
-                }
+                    HandleRethrowExceptionTypes();
             }
 
             public override void VisitTryStatement(TryStatementSyntax node)
             {
-                ExceptionTypesBuilder? catchTypes = null;
-                ExceptionTypesBuilder? generalCatchRethrowTypes = null;
+                var tryItems = _tryScopePool.Take();
 
-                // Determine the exception types that will be caught from the "try" block.
-                foreach (var catchClause in node.Catches)
-                {
-                    var declaration = catchClause.Declaration;
-                    if (declaration != null)
-                    {
-                        catchTypes ??= ExceptionTypesBuilder.Allocate();
-
-                        var catchTypeInfo = SemanticModel.GetTypeInfo(declaration.Type, CancellationToken);
-                        if (catchTypeInfo.Type is INamedTypeSymbol catchType)
-                        {
-                            // If there is no filter then the declared exception type will be
-                            // caught; otherwise it may not be caught.
-                            if (catchClause.Filter == null)
-                            {
-                                catchTypes.Add(catchType);
-                            }
-                            else if (declaration.Identifier != default)
-                            {
-                                // The filter may define a set of exception types that
-                                // will be caught.
-                                _ = AddFilterTypesFromIsExpressions(catchType, catchClause, catchTypes);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // If there is no filter then exceptions will be caught; otherwise they may
-                        // not be caught.
-                        if (catchClause.Filter == null ||
-                            EvaluatesToTrue(catchClause.Filter.FilterExpression))
-                        {
-                            generalCatchRethrowTypes ??= ExceptionTypesBuilder.Allocate();
-                        }
-                    }
-                }
-
-                _catchTypesScopes.Push((catchTypes, generalCatchRethrowTypes));
+                _tryScopes.Push(tryItems);
                 try
                 {
                     Visit(node.Block);
                 }
                 finally
                 {
-                    _ = _catchTypesScopes.Pop();
+                    _ = _tryScopes.Pop();
                 }
 
                 foreach (var catchClause in node.Catches)
                 {
-                    Visit(catchClause.Filter);
+                    INamedTypeSymbol? catchType;
+                    ISymbol? catchSymbol;
 
-                    ExceptionTypesBuilder? rethrowTypes;
-
-                    // Determine the exception types that were caught from the "try" block and may
-                    // be rethrown in the "catch" block.
                     var declaration = catchClause.Declaration;
                     if (declaration != null)
                     {
-                        catchTypes!.Clear();
-
                         var catchTypeInfo = SemanticModel.GetTypeInfo(declaration.Type, CancellationToken);
-                        if (catchTypeInfo.Type is INamedTypeSymbol catchType)
+                        if (catchTypeInfo.Type is INamedTypeSymbol type)
                         {
-                            if (catchClause.Filter == null ||
-                                declaration.Identifier == default)
-                            {
-                                catchTypes.Add(catchType);
-                            }
-                            else
-                            {
-                                // If the filter _only_ defines a set of exception types that will
-                                // be caught then only rethrow those types; otherwise, rethrow those
-                                // types and also the declared exception type.
-                                if (!AddFilterTypesFromIsExpressions(catchType, catchClause, catchTypes))
-                                    catchTypes.Add(catchType);
-                            }
+                            catchType = type;
+                            catchSymbol = SemanticModel.GetDeclaredSymbol(declaration, CancellationToken);
                         }
-
-                        rethrowTypes = catchTypes;
+                        else
+                        {
+                            catchType = Compilation.GetSpecialType(SpecialType.System_Void);
+                            catchSymbol = null;
+                        }
                     }
                     else
                     {
-                        // If there is no filter then otherwise-uncaught exception types caught from
-                        // the "try" block may be rethrown; otherwise those exception types were
-                        // considered uncaught and do not need to be reported again.
-                        rethrowTypes = generalCatchRethrowTypes;
+                        catchType = null;
+                        catchSymbol = null;
                     }
 
-                    _rethrowTypesScopes.Push(rethrowTypes);
+                    var catchScope = new CatchScope(tryItems, catchType, catchSymbol, catchClause.Filter?.FilterExpression);
+
+                    _catchScopes.Push(catchScope);
                     try
                     {
                         Visit(catchClause);
                     }
                     finally
                     {
-                        _ = _rethrowTypesScopes.Pop();
+                        _ = _catchScopes.Pop();
+                    }
+
+                    // If an exception type will be caught by the current "catch" clause, it is
+                    // tracked as caught so that subsequent "catch" clauses can ignore it and so
+                    // that it will not be handled as uncaught by the "try" statement unless
+                    // rethrown.
+
+                    bool? blindFilterResult = catchClause.Filter == null
+                        ? true
+                        : BlindFilterEvaluator.Instance.Visit(catchClause.Filter.FilterExpression);
+
+                    // If everything passes the filter, an exception type will be caught if it is
+                    // the "catch" type or a subtype of it.
+                    if (blindFilterResult == true)
+                    {
+                        for (int i = 0; i < tryItems.Count; ++i)
+                        {
+                            var tryItem = tryItems[i];
+
+                            foreach (var exceptionType in tryItem.Types)
+                            {
+                                // Skip types that have been caught by a prior "catch" clause or may
+                                // not be caught by the current "catch" clause.
+                                if (tryItem.Caught(exceptionType) || !catchScope.TypeWillCatch(exceptionType))
+                                    continue;
+
+                                EnsureCaughtTypes(tryItems, i, ref tryItem);
+
+                                tryItem.CaughtTypes!.Add(exceptionType);
+                            }
+                        }
+                    }
+                    // If anything passes the filter and the filter might depend on the exception
+                    // type, an exception type will be caught if it will pass the filter.
+                    else if (blindFilterResult != false && catchSymbol != null)
+                    {
+                        var catchFilter = catchClause.Filter!.FilterExpression;
+
+                        for (int i = 0; i < tryItems.Count; ++i)
+                        {
+                            var tryItem = tryItems[i];
+
+                            foreach (var exceptionType in tryItem.Types)
+                            {
+                                // Skip types that have been caught by a prior "catch" clause or may
+                                // not be caught by the current "catch" clause.
+                                if (tryItem.Caught(exceptionType) || !catchScope.TypeWillCatch(exceptionType))
+                                    continue;
+
+                                _filterEvaluator ??= new FilterEvaluator(SemanticModel);
+
+                                var result = _filterEvaluator.Evaluate(catchFilter, catchSymbol, exceptionType, rethrow: false, CancellationToken);
+                                if (result.Result)
+                                {
+                                    EnsureCaughtTypes(tryItems, i, ref tryItem);
+
+                                    tryItem.CaughtTypes!.Add(exceptionType);
+                                }
+                                else if (result.Subtypes != null)
+                                {
+                                    foreach (var subtype in result.Subtypes)
+                                    {
+                                        if (_filterEvaluator.EvaluateSubtype(catchFilter, catchSymbol, subtype, rethrow: false, CancellationToken))
+                                        {
+                                            EnsureCaughtTypes(tryItems, i, ref tryItem);
+
+                                            tryItem.CaughtTypes!.Add(subtype);
+                                        }
+                                    }
+
+                                    result.Subtypes.Free();
+                                }
+                            }
+                        }
                     }
                 }
 
-                catchTypes?.Free();
-                generalCatchRethrowTypes?.Free();
+                // Handle exception types that may be thrown in the "try" block and are not caught
+                // or are caught and rethrown.
+                foreach (var tryItem in tryItems)
+                {
+                    Debug.Assert(_builder.Count == 0);
+
+                    var caughtTypes = tryItem.CaughtTypes;
+                    var rethrownTypes = tryItem.RethrownTypes;
+
+                    foreach (var exceptionType in tryItem.Types)
+                    {
+                        if (caughtTypes == null ||
+                            !caughtTypes.Contains(exceptionType) ||
+                            (rethrownTypes != null &&
+                             rethrownTypes.Contains(exceptionType)))
+                        {
+                            _builder.Add(exceptionType);
+                        }
+                    }
+
+                    // Subtypes can be rethrown without having been thrown.
+                    if (tryItem.RethrownTypes != null)
+                    {
+                        foreach (var rethrownType in tryItem.RethrownTypes)
+                        {
+                            bool subsumed = false;
+                            foreach (var uncaughtType in _builder)
+                            {
+                                if (rethrownType.HasBaseConversionTo(uncaughtType))
+                                {
+                                    subsumed = true;
+                                    break;
+                                }
+                            }
+
+                            if (!subsumed)
+                                _builder.Add(rethrownType);
+                        }
+                    }
+
+                    if (_builder.Count > 0)
+                    {
+                        var uncaughtTypes = _builder.ToImmutable();
+                        _builder.Clear();
+
+                        var span = tryItem.Span;
+                        var throwerSymbol = tryItem.ThrowerSymbol;
+                        var throwerAccessorKind = tryItem.ThrowerAccessorKind;
+
+                        HandleExceptionTypes(span, throwerSymbol, throwerAccessorKind, uncaughtTypes);
+                    }
+
+                    tryItem.CaughtTypes?.Free();
+                    tryItem.RethrownTypes?.Free();
+                }
+
+                _tryScopePool.Return(tryItems);
 
                 Visit(node.Finally);
+
+                static void EnsureCaughtTypes(List<TryItem> tryItems, int i, ref TryItem tryItem)
+                {
+                    if (tryItem.CaughtTypes == null)
+                    {
+                        tryItem.CaughtTypes = ExceptionTypesBuilder.Allocate();
+
+                        // Propagate changed value.
+                        tryItems[i] = tryItem;
+                    }
+                }
             }
 
             protected abstract void HandleDelegateCreation(TextSpan span, IMethodSymbol symbol, ITypeSymbol delegateType);
@@ -552,7 +633,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             }
 
             /// <summary>
-            /// Handle exception types thrown by a specified accessors of a symbol, given an array
+            /// Handles exception types thrown by a specified accessors of a symbol, given an array
             /// of documented exception types for that symbol.
             /// </summary>
             protected void HandleThrownExceptionTypes(TextSpan span, ISymbol throwerSymbol, AccessorKinds throwerAccessorKinds, ImmutableArray<DocumentedExceptionType> thrownExceptionTypes)
@@ -560,18 +641,18 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 var enumerator = throwerAccessorKinds.GetEnumerator();
                 while (enumerator.MoveNext())
                 {
-                    var accessorKind = enumerator.Current;
+                    var throwerAccessorKind = enumerator.Current;
 
                     Debug.Assert(_builder.Count == 0);
 
                     foreach (var thrownExceptionType in thrownExceptionTypes)
                     {
-                        if (thrownExceptionType.AccessorKind != accessorKind)
+                        if (thrownExceptionType.AccessorKind != throwerAccessorKind)
                             continue;
 
                         var originalExceptionType = thrownExceptionType.ExceptionType.OriginalDefinition;
-                        if (IsTransitive(throwerSymbol, accessorKind, originalExceptionType))
-                            if (!TryIgnoreOrAddCaughtExceptionType(thrownExceptionType.ExceptionType, originalExceptionType))
+                        if (IsTransitive(throwerSymbol, throwerAccessorKind, originalExceptionType))
+                            if (!IsIgnoredExceptionType(thrownExceptionType.ExceptionType, originalExceptionType))
                                 _builder.Add(thrownExceptionType.ExceptionType);
                     }
 
@@ -580,7 +661,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                         var uncaughtTypes = _builder.ToImmutable();
                         _builder.Clear();
 
-                        HandleUncaughtExceptionTypes(span, throwerSymbol, accessorKind, uncaughtTypes);
+                        HandleExceptionTypes(span, throwerSymbol, throwerAccessorKind, uncaughtTypes);
                     }
                 }
 
@@ -808,7 +889,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 }
             }
 
-            private void HandleThrowExceptionTypes(ExpressionSyntax exceptionExpression, TextSpan span)
+            /// <summary>
+            /// Handles exception types thrown via a "throw" statement or expression.
+            /// </summary>
+            private void HandleThrowExceptionTypes(TextSpan span, ExpressionSyntax exceptionExpression)
             {
                 Debug.Assert(_builder.Count == 0);
 
@@ -819,7 +903,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     var uncaughtTypes = _builder.ToImmutable();
                     _builder.Clear();
 
-                    HandleUncaughtExceptionTypes(span, null, default, uncaughtTypes);
+                    HandleExceptionTypes(span, null, default, uncaughtTypes);
                 }
 
                 void AccumulateUncaughtTypes(ExpressionSyntax exceptionExpression)
@@ -856,8 +940,148 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                     }
 
                     if (thrownTypeInfoType is INamedTypeSymbol thrownType && thrownType.TypeKind != TypeKind.Error)
-                        if (!TryIgnoreOrAddCaughtExceptionType(thrownType, thrownType.OriginalDefinition))
+                        if (!IsIgnoredExceptionType(thrownType, thrownType.OriginalDefinition))
                             _builder.Add(thrownType);
+                }
+            }
+
+            /// <summary>
+            /// Handles exception types rethrown via a "throw" statement.
+            /// </summary>
+            private void HandleRethrowExceptionTypes()
+            {
+                if (_catchScopes.Count == 0)
+                    return;
+
+                // Enclosing "catch" clause determines what exception types may be rethrown.
+                var catchScope = _catchScopes.Peek();
+                var catchSymbol = catchScope.Symbol;
+                var catchFilter = catchScope.Filter;
+
+                bool? blindFilterResult = catchFilter == null
+                    ? true
+                    : BlindFilterEvaluator.Instance.Visit(catchFilter);
+
+                // If everything passes the filter or if anything passes the filter and the filter
+                // does not depend on the exception type, an exception type will be rethrown if it
+                // is the "catch" type or a subtype of it.
+                if (blindFilterResult == true ||
+                    (blindFilterResult != false && catchSymbol == null))
+                {
+                    for (int i = 0; i < catchScope.TryItems.Count; ++i)
+                    {
+                        var tryItem = catchScope.TryItems[i];
+
+                        Debug.Assert(_builder.Count == 0);
+
+                        foreach (var exceptionType in tryItem.Types)
+                        {
+                            // Skip types that have been caught by a prior "catch" clause or will
+                            // not be caught by the enclosing "catch" clause.
+                            if (tryItem.Caught(exceptionType) || !catchScope.TypeMayCatch(exceptionType))
+                                continue;
+
+                            _builder.Add(exceptionType);
+                        }
+
+                        if (_builder.Count > 0)
+                        {
+                            Rethrow(catchScope.TryItems, i, ref tryItem, _builder);
+
+                            _builder.Clear();
+                        }
+                    }
+                }
+                // If anything passes the filter and the filter might depend on the exception type,
+                // an exception type will be rethrown if it may pass the filter.
+                else if (blindFilterResult != false && catchSymbol != null)
+                {
+                    for (int i = 0; i < catchScope.TryItems.Count; ++i)
+                    {
+                        var tryItem = catchScope.TryItems[i];
+
+                        Debug.Assert(_builder.Count == 0);
+
+                        foreach (var exceptionType in tryItem.Types)
+                        {
+                            // Skip types that have been caught by a prior "catch" clause or will
+                            // not be caught by the enclosing "catch" clause.
+                            if (tryItem.Caught(exceptionType) || !catchScope.TypeMayCatch(exceptionType))
+                                continue;
+
+                            _filterEvaluator ??= new FilterEvaluator(SemanticModel);
+
+                            var result = _filterEvaluator.Evaluate(catchFilter!, catchSymbol, exceptionType, rethrow: true, CancellationToken);
+                            if (result.Result)
+                            {
+                                _builder.Add(exceptionType);
+                            }
+                            else if (result.Subtypes != null)
+                            {
+                                foreach (var subtype in result.Subtypes)
+                                    if (_filterEvaluator.EvaluateSubtype(catchFilter!, catchSymbol, subtype, rethrow: true, CancellationToken))
+                                        _builder.Add(subtype);
+
+                                result.Subtypes.Free();
+                            }
+                        }
+
+                        if (_builder.Count > 0)
+                        {
+                            Rethrow(catchScope.TryItems, i, ref tryItem, _builder);
+
+                            _builder.Clear();
+                        }
+                    }
+                }
+
+                void Rethrow(List<TryItem> tryItems, int i, ref TryItem tryItem, ExceptionTypesBuilder builder)
+                {
+                    // If within a "try" block, the exception types that may be rethrown are tracked
+                    // in an item in its scope.
+                    if (_tryScopes.Count > 0)
+                    {
+                        var tryScope = _tryScopes.Peek();
+
+                        var uncaughtTypes = builder.ToImmutable();
+
+                        tryScope.Add(new TryItem(tryItem.Span, tryItem.ThrowerSymbol, tryItem.ThrowerAccessorKind, uncaughtTypes));
+                    }
+                    // Otherwise, the exception types are tracked as rethrown so that they can be
+                    // handled as uncaught by the "try" statement.
+                    else
+                    {
+                        if (tryItem.RethrownTypes == null)
+                        {
+                            tryItem.RethrownTypes = ExceptionTypesBuilder.Allocate();
+
+                            // Propagate changed value.
+                            tryItems[i] = tryItem;
+                        }
+
+                        foreach (var type in builder)
+                            tryItem.RethrownTypes.Add(type);
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Handles specified exception types either by tracking them in an enclosing "try"
+            /// scope or handling them as uncaught.
+            /// </summary>
+            private void HandleExceptionTypes(TextSpan span, ISymbol? throwerSymbol, AccessorKind throwerAccessorKind, ImmutableArray<INamedTypeSymbol> exceptionTypes)
+            {
+                // If within a "try" block, the exception types are tracked in an item in its scope.
+                if (_tryScopes.Count > 0)
+                {
+                    var tryScope = _tryScopes.Peek();
+
+                    tryScope.Add(new TryItem(span, throwerSymbol, throwerAccessorKind, exceptionTypes));
+                }
+                // Otherwise, the exception types are uncaught.
+                else
+                {
+                    HandleUncaughtExceptionTypes(span, throwerSymbol, throwerAccessorKind, exceptionTypes);
                 }
             }
 
@@ -882,99 +1106,6 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 Debug.Assert(delegateType.TypeKind == TypeKind.Delegate, $"Expected delegate but type kind is {delegateType.TypeKind}.");
 
                 return true;
-            }
-
-            private bool AddFilterTypesFromIsExpressions(INamedTypeSymbol catchType, CatchClauseSyntax catchClause, ExceptionTypesBuilder catchTypes)
-            {
-                var catchSymbol = SemanticModel.GetDeclaredSymbol(catchClause.Declaration!, CancellationToken);
-                if (catchSymbol is null)
-                    return false;
-
-                var expression = catchClause.Filter!.FilterExpression;
-
-                int index = catchTypes.Count;
-
-                bool complete = AddTypesFromIsExpressions(catchType, catchSymbol, expression, catchTypes);
-
-                catchTypes.Reverse(index);
-
-                return complete;
-            }
-
-            /// <summary>
-            /// Adds the types from logical-ORed <c>is</c> expressions on <paramref name="symbol"/>.
-            /// Returns <see langword="true"/> if the type of <paramref name="symbol"/> must be one
-            /// of the types added to <paramref name="types"/> in order to satisfy
-            /// <paramref name="expression"/> (and thus the type of <paramref name="symbol"/> can be
-            /// treated as more refined than its declared type).
-            /// </summary>
-            private bool AddTypesFromIsExpressions(INamedTypeSymbol catchType, ISymbol symbol, ExpressionSyntax expression, ExceptionTypesBuilder types)
-            {
-                bool complete = true;
-
-                while (expression.IsKind(SyntaxKind.ParenthesizedExpression))
-                    expression = ((ParenthesizedExpressionSyntax)expression).Expression;
-
-                while (expression.IsKind(SyntaxKind.LogicalOrExpression))
-                {
-                    var orExpression = (BinaryExpressionSyntax)expression;
-
-                    complete &= AddTypesFromIsExpressions(catchType, symbol, orExpression.Right, types);
-
-                    expression = orExpression.Left;
-
-                    while (expression.IsKind(SyntaxKind.ParenthesizedExpression))
-                        expression = ((ParenthesizedExpressionSyntax)expression).Expression;
-                }
-
-                if (expression.IsKind(SyntaxKind.IsExpression))
-                {
-                    var isExpression = (BinaryExpressionSyntax)expression;
-                    if (isExpression.Left.IsKind(SyntaxKind.IdentifierName) &&
-                        isExpression.Right is TypeSyntax)
-                    {
-                        var isIdentifierName = (IdentifierNameSyntax)isExpression.Left;
-                        var isSymbol = SemanticModel.GetSymbolInfo(isIdentifierName, CancellationToken).Symbol;
-
-                        if (SymbolEqualityComparer.Default.Equals(symbol, isSymbol))
-                        {
-                            var isTypeInfo = SemanticModel.GetTypeInfo(isExpression.Right, CancellationToken);
-                            if (isTypeInfo.Type is INamedTypeSymbol isType)
-                            {
-                                if (isType.HasBaseConversionTo(catchType))
-                                    types.Add(isType);
-
-                                return complete;
-                            }
-                        }
-                    }
-                }
-
-                return false;
-            }
-
-            /// <summary>
-            /// Performs simple evaluation of logical-OR expressions.
-            /// </summary>
-            private static bool EvaluatesToTrue(ExpressionSyntax expression)
-            {
-                while (expression.IsKind(SyntaxKind.ParenthesizedExpression))
-                    expression = ((ParenthesizedExpressionSyntax)expression).Expression;
-
-                while (expression.IsKind(SyntaxKind.LogicalOrExpression))
-                {
-                    var orExpression = (BinaryExpressionSyntax)expression;
-
-                    if (EvaluatesToTrue(orExpression.Right))
-                        return true;
-
-                    expression = orExpression.Left;
-
-                    while (expression.IsKind(SyntaxKind.ParenthesizedExpression))
-                        expression = ((ParenthesizedExpressionSyntax)expression).Expression;
-                }
-
-                return expression.IsKind(SyntaxKind.TrueLiteralExpression);
             }
 
             private void VisitAnonymousFunctionExpression(AnonymousFunctionExpressionSyntax node, TextSpan span)
@@ -1072,30 +1203,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 HandleThrownExceptionTypes(span, symbol, accessorKinds);
             }
 
-            /// <summary>
-            /// Indicates whether an exception type is ignored/caught.  If the exception type is
-            /// caught by a general catch clause, the type is added to the list of exception types
-            /// caught by that clause.
-            /// </summary>
-            private bool TryIgnoreOrAddCaughtExceptionType(INamedTypeSymbol exceptionType, INamedTypeSymbol originalExceptionType)
+            private bool IsIgnoredExceptionType(INamedTypeSymbol exceptionType, INamedTypeSymbol originalExceptionType)
             {
                 if (originalExceptionType.HasBaseConversionTo(Context.IgnoredExceptionTypes))
                     return true;
-
-                // Look for enclosing "catch" clause.
-                foreach (var (catchTypes, generalCatchRethrowTypes) in _catchTypesScopes)
-                {
-                    if (catchTypes != null)
-                        foreach (var catchType in catchTypes)
-                            if (exceptionType.HasBaseConversionTo(catchType))
-                                return true;
-
-                    if (generalCatchRethrowTypes != null)
-                    {
-                        generalCatchRethrowTypes.Add(exceptionType);
-                        return true;
-                    }
-                }
 
                 return IsIgnoredExceptionType(exceptionType);
             }
@@ -1107,6 +1218,145 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 Set,
                 GetAndSet,
                 Invoke,
+            }
+        }
+
+        private sealed class TryScopePool : ObjectPool<List<TryItem>>
+        {
+            private readonly int _itemMaxCapacity;
+
+            public TryScopePool(int capacity, int itemMaxCapacity)
+                : base(capacity)
+            {
+                _itemMaxCapacity = itemMaxCapacity;
+            }
+
+            protected override List<TryItem> Create()
+            {
+                return new List<TryItem>();
+            }
+
+            public override void Return(List<TryItem> item)
+            {
+                if (item.Capacity > _itemMaxCapacity)
+                    return;
+
+                item.Clear();
+
+                _ = ReturnCore(item);
+            }
+        }
+
+        /// <summary>
+        /// Information about exception types that may be thrown from a "try" block if not caught or
+        /// if caught and rethrown.
+        /// </summary>
+        private struct TryItem
+        {
+            public readonly TextSpan Span;
+
+            public readonly ISymbol? ThrowerSymbol;
+
+            public readonly AccessorKind ThrowerAccessorKind;
+
+            /// <summary>
+            /// The exception types that may be thrown.
+            /// </summary>
+            /// <remarks>
+            /// After analyzing the "try" statement, an exception type is considered thrown if it is
+            /// in <see cref="Types"/> and is not in <see cref="CaughtTypes"/> or if it is in
+            /// <see cref="RethrownTypes"/>.
+            /// </remarks>
+            public readonly ImmutableArray<INamedTypeSymbol> Types;
+
+            /// <summary>
+            /// The exception types that have been caught.
+            /// </summary>
+            /// <remarks>
+            /// After analyzing each "catch" clause, an exception type from <see cref="Types"/> is
+            /// added to this collection if the "catch" clause will always catch it.  Based on the
+            /// filter one or more subtypes may be added instead.
+            /// </remarks>
+            public ExceptionTypesBuilder? CaughtTypes;
+
+            /// <summary>
+            /// The exception types that may be rethrown.
+            /// </summary>
+            /// <remarks>
+            /// When analyzing a rethrow, an exception type from <see cref="Types"/> is added if it
+            /// has not been added to <see cref="CaughtTypes"/> and it may be caught and it is not
+            /// captured by another "try" scope.  Based on the filter one or more subtypes may be
+            /// added instead.
+            /// </remarks>
+            public ExceptionTypesBuilder? RethrownTypes;
+
+            public TryItem(TextSpan span, ISymbol? throwerSymbol, AccessorKind throwerAccessorKind, ImmutableArray<INamedTypeSymbol> types)
+            {
+                Span = span;
+                ThrowerSymbol = throwerSymbol;
+                ThrowerAccessorKind = throwerAccessorKind;
+                Types = types;
+                CaughtTypes = null;
+                RethrownTypes = null;
+            }
+
+            public readonly bool Caught(INamedTypeSymbol exceptionType)
+            {
+                if (CaughtTypes != null)
+                    foreach (var caughtType in CaughtTypes)
+                        if (exceptionType.HasBaseConversionTo(caughtType))
+                            return true;
+
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Information about a "catch" clause.
+        /// </summary>
+        private readonly struct CatchScope
+        {
+            /// <summary>
+            /// Information about exception types that may be thrown from the associated "try"
+            /// block.
+            /// </summary>
+            public readonly List<TryItem> TryItems;
+
+            /// <summary>
+            /// The caught exception type, if any.  If <see langword="null"/>, all types are caught.
+            /// </summary>
+            public readonly INamedTypeSymbol? Type;
+
+            /// <summary>
+            /// The symbol of the caught exception, if any.
+            /// </summary>
+            public readonly ISymbol? Symbol;
+
+            /// <summary>
+            /// The filter, if any.
+            /// </summary>
+            public readonly ExpressionSyntax? Filter;
+
+            public CatchScope(List<TryItem> tryItems, INamedTypeSymbol? type, ISymbol? symbol, ExpressionSyntax? filter)
+            {
+                TryItems = tryItems;
+                Type = type;
+                Symbol = symbol;
+                Filter = filter;
+            }
+
+            public readonly bool TypeWillCatch(INamedTypeSymbol exceptionType)
+            {
+                return Type == null ||
+                       (Type.TypeKind == TypeKind.Class &&
+                        exceptionType.HasBaseConversionTo(Type));
+            }
+
+            public readonly bool TypeMayCatch(INamedTypeSymbol exceptionType)
+            {
+                return Type == null ||
+                       Type.TypeKind != TypeKind.Class ||
+                       exceptionType.HasBaseConversionTo(Type);
             }
         }
     }

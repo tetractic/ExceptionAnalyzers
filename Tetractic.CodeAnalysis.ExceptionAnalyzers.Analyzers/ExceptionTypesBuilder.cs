@@ -15,7 +15,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 {
     internal sealed class ExceptionTypesBuilder
     {
-        private static readonly ObjectPool<ExceptionTypesBuilder> _pool = new ObjectPool(Environment.ProcessorCount * 16, 64);
+        private static readonly ObjectPool _pool = new ObjectPool(Environment.ProcessorCount * 16, 64);
 
         private INamedTypeSymbol[] _items;
 
@@ -89,17 +89,19 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             _count = 0;
         }
 
-        public Enumerator GetEnumerator() => new Enumerator(this);
-
-        public void Reverse(int index)
+        public bool Contains(INamedTypeSymbol item)
         {
-            for (int low = index, high = _count - 1; low < high; low += 1, high -= 1)
-            {
-                var temp = _items[low];
-                _items[low] = _items[high];
-                _items[high] = temp;
-            }
+            if (item.TypeKind == TypeKind.Error)
+                return false;
+
+            for (int i = 0; i < _count; ++i)
+                if (SymbolEqualityComparer.Default.Equals(_items[i], item))
+                    return true;
+
+            return false;
         }
+
+        public Enumerator GetEnumerator() => new Enumerator(this);
 
         public ImmutableArray<INamedTypeSymbol> ToImmutable()
         {
