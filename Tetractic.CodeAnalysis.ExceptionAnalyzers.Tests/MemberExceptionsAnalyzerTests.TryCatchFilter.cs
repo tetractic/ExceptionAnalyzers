@@ -490,6 +490,14 @@ class C
         }
 
         [TestMethod]
+        public async Task TryCatchFilterIsLeftParenthesized()
+        {
+            await ExpectTrueAsync("ArithmeticException", "Exception ex", "(ex) is ArithmeticException");
+            await ExpectFalseAsync("InvalidOperationException", "Exception ex", "(ex) is ArithmeticException");
+            await ExpectMaybeAsync("Exception", "Exception ex", "(ex) is ArithmeticException", "ArithmeticException");
+        }
+
+        [TestMethod]
         public async Task TryCatchFilterIsPatternSubtype()
         {
             await ExpectMaybeAsync("ArithmeticException", "Exception ex", "ex is (OverflowException)", "OverflowException");
@@ -525,9 +533,25 @@ class C
         }
 
         [TestMethod]
+        public async Task TryCatchFilterIsPatternLeftParenthesized()
+        {
+            await ExpectTrueAsync("Exception", "Exception ex", "(ex) is (Exception)");
+            await ExpectTrueAsync("Exception", "Exception ex", "(ex) is Exception ex2");
+            await ExpectFalseAsync("InvalidOperationException", "Exception ex", "(ex) is (ArithmeticException)");
+            await ExpectFalseAsync("InvalidOperationException", "Exception ex", "(ex) is ArithmeticException arithmeticEx");
+            await ExpectMaybeAsync("Exception", "Exception ex", "(ex) is (ArithmeticException)", "ArithmeticException");
+            await ExpectMaybeAsync("Exception", "Exception ex", "(ex) is ArithmeticException arithmeticEx", "ArithmeticException");
+        }
+
+        [TestMethod]
         public async Task TryCatchFilterParenthesizedPattern()
         {
-            await ExpectTrueAsync("Exception", "Exception ex", "ex is not (not Exception)");
+            await ExpectTrueAsync("Exception", "Exception ex", "ex is (Exception)");
+            await ExpectFalseAsync("Exception", "Exception ex", "ex is not (Exception)");
+            await ExpectFalseAsync("Exception", "Exception ex", "ex is (not Exception)");
+            await ExpectMaybeAsync("Exception", "Exception ex", "ex is (ArithmeticException)", "ArithmeticException");
+            await ExpectMaybeAsync("Exception", "Exception ex", "ex is not (ArithmeticException)");
+            await ExpectMaybeAsync("Exception", "Exception ex", "ex is (not ArithmeticException)");
         }
 
         [TestMethod]

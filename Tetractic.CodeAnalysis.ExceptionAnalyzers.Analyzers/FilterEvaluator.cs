@@ -136,36 +136,33 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
                 if (_type.TypeKind != TypeKind.Class)
                     return null;
 
-                if (node.Left.IsKind(SyntaxKind.IdentifierName))
+                var symbol = _semanticModel.GetSymbolInfo(node.Left, _cancellationToken).Symbol;
+
+                if (SymbolEqualityComparer.Default.Equals(symbol, _symbol))
                 {
-                    var symbol = _semanticModel.GetSymbolInfo(node.Left, _cancellationToken).Symbol;
+                    var typeSymbol = _semanticModel.GetSymbolInfo(node.Right, _cancellationToken).Symbol;
 
-                    if (SymbolEqualityComparer.Default.Equals(symbol, _symbol))
+                    if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
                     {
-                        var typeSymbol = _semanticModel.GetSymbolInfo(node.Right, _cancellationToken).Symbol;
+                        if (namedTypeSymbol.TypeKind != TypeKind.Class)
+                            return null;
 
-                        if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+                        if (_type.HasBaseConversionTo(namedTypeSymbol))
+                            return true;
+
+                        if (namedTypeSymbol.HasBaseConversionTo(_type))
                         {
-                            if (namedTypeSymbol.TypeKind != TypeKind.Class)
-                                return null;
-
-                            if (_type.HasBaseConversionTo(namedTypeSymbol))
-                                return true;
-
-                            if (namedTypeSymbol.HasBaseConversionTo(_type))
+                            if (_collectSubtypes)
                             {
-                                if (_collectSubtypes)
-                                {
-                                    _subtypes ??= ExceptionTypesBuilder.Allocate();
-                                    _subtypes.Add(namedTypeSymbol);
-                                }
-
-                                if (_allowSubtypes)
-                                    return null;
+                                _subtypes ??= ExceptionTypesBuilder.Allocate();
+                                _subtypes.Add(namedTypeSymbol);
                             }
 
-                            return false;
+                            if (_allowSubtypes)
+                                return null;
                         }
+
+                        return false;
                     }
                 }
 
@@ -233,12 +230,7 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
 
         public override bool? VisitConstantPattern(ConstantPatternSyntax node)
         {
-            var expression = node.Expression;
-
-            while (expression.IsKind(SyntaxKind.ParenthesizedExpression))
-                expression = ((ParenthesizedExpressionSyntax)expression).Expression;
-
-            var typeSymbol = _semanticModel.GetSymbolInfo(expression, _cancellationToken).Symbol;
+            var typeSymbol = _semanticModel.GetSymbolInfo(node.Expression, _cancellationToken).Symbol;
 
             if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
             {
@@ -301,13 +293,10 @@ namespace Tetractic.CodeAnalysis.ExceptionAnalyzers
             if (_type.TypeKind != TypeKind.Class)
                 return null;
 
-            if (node.Expression.IsKind(SyntaxKind.IdentifierName))
-            {
-                var symbol = _semanticModel.GetSymbolInfo(node.Expression, _cancellationToken).Symbol;
+            var symbol = _semanticModel.GetSymbolInfo(node.Expression, _cancellationToken).Symbol;
 
-                if (SymbolEqualityComparer.Default.Equals(symbol, _symbol))
-                    return Visit(node.Pattern);
-            }
+            if (SymbolEqualityComparer.Default.Equals(symbol, _symbol))
+                return Visit(node.Pattern);
 
             return DefaultVisit(node);
         }
