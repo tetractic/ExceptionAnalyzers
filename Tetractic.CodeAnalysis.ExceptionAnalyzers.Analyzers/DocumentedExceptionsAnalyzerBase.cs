@@ -1,4 +1,4 @@
-﻿// Copyright 2021 Carl Reinke
+﻿// Copyright Carl Reinke
 //
 // This file is part of a library that is licensed under the terms of the GNU
 // Lesser General Public License Version 3 as published by the Free Software
