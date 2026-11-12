@@ -9,7 +9,7 @@ platform: Any CPU
 before_build:
 - pwsh: 'Get-ChildItem Directory.Build.props | % { [xml]$xml = Get-Content $_; $xml.SelectNodes("/Project/PropertyGroup/FileVersion") | % { $_."#text" += ".${Env:APPVEYOR_BUILD_NUMBER}" }; $xml.SelectNodes("/Project/PropertyGroup/InformationalVersion") | % { $_."#text" += "+${Env:APPVEYOR_REPO_COMMIT}" }; $xml.Save($_) }'
 build_script:
-- ps: msbuild "Tetractic.CodeAnalysis.ExceptionAnalyzers.sln" /t:Restore,Build /p:Configuration=$env:CONFIGURATION /p:DeployExtension=false /m /v:minimal /l:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- ps: msbuild "Tetractic.CodeAnalysis.ExceptionAnalyzers.slnx" /t:Restore,Build /p:Configuration=$env:CONFIGURATION /p:DeployExtension=false /m /v:minimal /l:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 artifacts:
 - path: '**\*.nupkg'
   name: NuGet package

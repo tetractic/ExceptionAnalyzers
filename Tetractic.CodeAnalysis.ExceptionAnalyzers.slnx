@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="Tools/GlobalExceptionAdjustmentsTool/GlobalExceptionAdjustmentsTool.csproj" />
+  </Folder>
+  <Project Path="Tetractic.CodeAnalysis.ExceptionAnalyzers.Analyzers/Tetractic.CodeAnalysis.ExceptionAnalyzers.Analyzers.csproj" />
+  <Project Path="Tetractic.CodeAnalysis.ExceptionAnalyzers.CodeFixes/Tetractic.CodeAnalysis.ExceptionAnalyzers.CodeFixes.csproj" />
+  <Project Path="Tetractic.CodeAnalysis.ExceptionAnalyzers.Package/Tetractic.CodeAnalysis.ExceptionAnalyzers.Package.csproj" />
+  <Project Path="Tetractic.CodeAnalysis.ExceptionAnalyzers.Tests/Tetractic.CodeAnalysis.ExceptionAnalyzers.Tests.csproj" />
+  <Project Path="Tetractic.CodeAnalysis.ExceptionAnalyzers.Vsix.2019/Tetractic.CodeAnalysis.ExceptionAnalyzers.Vsix.2019.csproj" />
+  <Project Path="Tetractic.CodeAnalysis.ExceptionAnalyzers.Vsix.2022/Tetractic.CodeAnalysis.ExceptionAnalyzers.Vsix.2022.csproj" />
+</Solution>
